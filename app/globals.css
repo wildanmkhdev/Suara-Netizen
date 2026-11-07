@@ -1,18 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --muted: #f1f5f9;
-  --muted-foreground: #475569;
-  --border: #e2e8f0;
-  --radius: 0.875rem;
+  --sn-paper: #ffffff;
+  --sn-ink: #111111;
+  --sn-muted: #5c5c5c;
+  --sn-surface: #f4f5f3;
+  --sn-line: #dedfda;
+  --sn-control: #b9bdb8;
+  --sn-positive: #237454;
+  --sn-negative: #af4338;
+  --sn-promotion: #965128;
+  --sn-positive-soft: #eaf3ed;
+  --sn-negative-soft: #fbefed;
+  --sn-promotion-soft: #f7eee7;
+  --sn-font: var(--font-bricolage), "Helvetica Neue", sans-serif;
+  --sn-page-pad: clamp(1.25rem, 3.6vw, 4rem);
+  --sn-gap: clamp(1.25rem, 2.4vw, 2.5rem);
+  --sn-small: 0.875rem;
+  --sn-body: clamp(1rem, 0.96rem + 0.16vw, 1.125rem);
+  --sn-lead: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);
+  --sn-heading: clamp(1.875rem, 1.1rem + 2.7vw, 3.5rem);
+  --sn-display: clamp(2.65rem, 1rem + 6.2vw, 6rem);
+  --background: var(--sn-paper);
+  --foreground: var(--sn-ink);
+  --card: var(--sn-paper);
+  --card-foreground: var(--sn-ink);
+  --popover: var(--sn-paper);
+  --popover-foreground: var(--sn-ink);
+  --primary: var(--sn-ink);
+  --primary-foreground: var(--sn-paper);
+  --muted: var(--sn-surface);
+  --muted-foreground: var(--sn-muted);
+  --border: var(--sn-line);
 }
 
 @theme inline {
@@ -27,42 +46,46 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --font-sans: var(--sn-font);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 1.5rem;
+  background: var(--sn-paper);
 }
 
 body {
-  background-color: #ffffff;
-  color: #0f172a;
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  background: var(--sn-paper);
+  color: var(--sn-ink);
+  font-family: var(--sn-font);
+  font-size: var(--sn-body);
+  line-height: 1.55;
+  font-kerning: normal;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Crisp Clean Card styling */
-.clean-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-}
+h1, h2, h3, h4, p { margin: 0; }
+h1, h2, h3, h4 { text-wrap: balance; }
+p { text-wrap: pretty; }
+button, input, select, textarea { font: inherit; }
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), summary { cursor: pointer; }
+button:disabled { cursor: wait; }
+a { text-underline-offset: 0.22em; text-decoration-thickness: 0.07em; }
+input { caret-color: var(--sn-ink); }
+img, svg { max-width: 100%; }
+::selection { background: var(--sn-ink); color: var(--sn-paper); }
+:focus-visible { outline: 2px solid var(--sn-ink); outline-offset: 4px; }
+* { scrollbar-width: thin; scrollbar-color: var(--sn-control) var(--sn-paper); }
 
-.clean-card-hover {
-  transition: all 0.2s ease-in-out;
-}
-.clean-card-hover:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* Custom Clean Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #f8fafc;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

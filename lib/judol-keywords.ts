@@ -110,7 +110,7 @@ export interface WordFrequencyItem {
   text: string;
   value: number;
   type: 'judol' | 'normal';
-  category: 'positif' | 'negatif' | 'judol' | 'netral';
+  category?: 'positif' | 'negatif' | 'judol' | 'netral';
 }
 
 /**

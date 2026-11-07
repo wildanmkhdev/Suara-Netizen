@@ -1,506 +1,506 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { WordFrequencyItem } from '@/lib/judol-keywords';
-import {
-  Cloud,
-  Flame,
-  Smile,
-  Frown,
-  Download,
-  BarChart2,
-  Layers,
-} from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { WordFrequencyItem } from '@/lib/judol-keywords';
+import { Download } from 'lucide-react';
+import { layoutWordCloud, WORD_CLOUD_LIMIT } from '@/lib/word-cloud-layout';
+import type { WordCloudCategory, WordCloudLayout, WordCloudWord } from '@/lib/word-cloud-layout';
+import styles from './SentimentWordCloud.module.css';
 
 interface SentimentWordCloudProps {
   words: WordFrequencyItem[];
 }
 
-interface PlacedWord {
-  text: string;
-  size: number;
-  x: number;
-  y: number;
-  rotate: boolean;
-  color: string;
-  category: string;
-  value: number;
+type CategoryFilter = 'all' | WordCloudCategory;
+type ViewMode = 'cloud' | 'split' | 'barchart';
+
+const CATEGORY_ORDER: readonly WordCloudCategory[] = ['positif', 'negatif', 'netral', 'judol', 'unknown'];
+const CATEGORY_DETAILS: Record<WordCloudCategory, { label: string; token: string }> = {
+  positif: { label: 'Positif', token: '--sn-positive' },
+  negatif: { label: 'Negatif', token: '--sn-negative' },
+  netral: { label: 'Netral', token: '--sn-ink' },
+  judol: { label: 'Indikasi promosi', token: '--sn-promotion' },
+  unknown: { label: 'Belum dikategorikan', token: '--sn-muted' },
+};
+const VIEW_OPTIONS: readonly { key: ViewMode; label: string }[] = [
+  { key: 'cloud', label: 'Peta kata' },
+  { key: 'split', label: 'Per kategori' },
+  { key: 'barchart', label: 'Frekuensi' },
+];
+const countFormatter = new Intl.NumberFormat('id-ID');
+
+function resolveCategory(word: WordFrequencyItem): WordCloudCategory {
+  switch (word.category) {
+    case 'positif':
+    case 'negatif':
+    case 'netral':
+    case 'judol':
+      return word.category;
+    default:
+      // Legacy promotion flags carry information; a missing sentiment does not.
+      return word.type === 'judol' ? 'judol' : 'unknown';
+  }
+}
+
+function categoryColor(category: WordCloudCategory): string {
+  return `var(${CATEGORY_DETAILS[category].token})`;
+}
+
+interface MeasuredCloud {
+  source: readonly WordCloudWord[];
+  width: number;
+  height: number;
+  fontFamily: string;
+  layout: WordCloudLayout | null;
+  error: string | null;
+}
+
+function useMeasuredWordCloud(words: readonly WordCloudWord[]) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [result, setResult] = useState<MeasuredCloud | null>(null);
+  const { width, height } = size;
+
+  useEffect(() => {
+    const element = viewportRef.current;
+    if (!element) return;
+
+    const updateSize = (nextWidth: number, nextHeight: number) => {
+      const measuredWidth = Math.round(nextWidth);
+      const measuredHeight = Math.round(nextHeight);
+      setSize((previous) => previous.width === measuredWidth && previous.height === measuredHeight
+        ? previous
+        : { width: measuredWidth, height: measuredHeight });
+    };
+    const measureViewport = () => updateSize(element.clientWidth, element.clientHeight);
+    measureViewport();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measureViewport);
+      return () => window.removeEventListener('resize', measureViewport);
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) updateSize(entry.contentRect.width, entry.contentRect.height);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const element = viewportRef.current;
+    if (!element || words.length === 0 || width === 0 || height === 0) return;
+    let cancelled = false;
+
+    const generate = async () => {
+      const fontFamily = window.getComputedStyle(element).fontFamily;
+      const sample = words.slice(0, WORD_CLOUD_LIMIT).map((word) => word.text).join(' ');
+      await document.fonts.load(`700 16px ${fontFamily}`, sample);
+      await document.fonts.ready;
+      if (cancelled) return;
+
+      const context = document.createElement('canvas').getContext('2d');
+      if (!context) throw new Error('Canvas text measurement is unavailable');
+      context.textAlign = 'left';
+      context.textBaseline = 'alphabetic';
+
+      const layout = layoutWordCloud(words, {
+        width,
+        height,
+        measure: (text, fontSize) => {
+          context.font = `700 ${fontSize}px ${fontFamily}`;
+          const metrics = context.measureText(text);
+          const left = Math.max(0, metrics.actualBoundingBoxLeft);
+          const right = Math.max(metrics.width, metrics.actualBoundingBoxRight);
+          return {
+            width: left + right,
+            height: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
+            baselineX: left,
+            baselineY: metrics.actualBoundingBoxAscent,
+          };
+        },
+      });
+      if (!cancelled) setResult({ source: words, width, height, fontFamily, layout, error: null });
+    };
+
+    void generate().catch(() => {
+      if (!cancelled) setResult({
+        source: words,
+        width,
+        height,
+        fontFamily: '',
+        layout: null,
+        error: 'Peta kata tidak dapat digambar di peramban ini. Gunakan tabel frekuensi di bawah.',
+      });
+    });
+    return () => { cancelled = true; };
+  }, [words, width, height]);
+
+  const current = result && result.source === words && result.width === width && result.height === height
+    ? result
+    : null;
+  return { viewportRef, current, isPending: words.length > 0 && !current };
+}
+
+interface WordCloudPlotProps {
+  words: readonly WordCloudWord[];
+  label: string;
+  compact?: boolean;
+  downloadable?: boolean;
+}
+
+function WordCloudPlot({ words, label, compact = false, downloadable = false }: WordCloudPlotProps) {
+  const { viewportRef, current, isPending } = useMeasuredWordCloud(words);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const titleId = useId();
+  const descriptionId = useId();
+  const captionId = useId();
+  const layout = current?.layout;
+
+  const downloadPNG = async () => {
+    if (!layout || !current || layout.words.length === 0 || isExporting) return;
+    setIsExporting(true);
+    setExportError(null);
+
+    try {
+      await document.fonts.load(`400 16px ${current.fontFamily}`);
+      await document.fonts.ready;
+
+      const canvas = document.createElement('canvas');
+      const exportWidth = Math.max(1200, layout.width * 2);
+      const scale = (exportWidth - 80) / layout.width;
+      const cloudTop = 180;
+      const cloudBottom = cloudTop + layout.height * scale;
+      canvas.width = exportWidth;
+      canvas.height = Math.ceil(cloudBottom + 76);
+      const context = canvas.getContext('2d');
+      const element = viewportRef.current;
+      if (!context || !element) throw new Error('PNG rendering is unavailable');
+
+      const computedStyle = window.getComputedStyle(element);
+      const token = (name: string) => computedStyle.getPropertyValue(name).trim();
+      context.fillStyle = token('--sn-paper');
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = token('--sn-ink');
+      context.textAlign = 'left';
+      context.textBaseline = 'alphabetic';
+      context.font = `400 16px ${current.fontFamily}`;
+      context.fillText('Suara-Netizen', 40, 40);
+      context.font = `700 30px ${current.fontFamily}`;
+      context.fillText('Kata dalam komentar', 40, 80);
+      context.font = `400 18px ${current.fontFamily}`;
+      context.fillText(`${label} (${countFormatter.format(words.length)} kata tersedia)`, 40, 113);
+
+      context.font = `400 16px ${current.fontFamily}`;
+      let legendX = 40;
+      for (const category of CATEGORY_ORDER) {
+        if (!words.some((word) => word.category === category)) continue;
+        context.fillStyle = token(CATEGORY_DETAILS[category].token);
+        context.beginPath();
+        context.arc(legendX + 5, 144, 5, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = token('--sn-muted');
+        context.fillText(CATEGORY_DETAILS[category].label, legendX + 18, 149);
+        legendX += context.measureText(CATEGORY_DETAILS[category].label).width + 42;
+      }
+
+      // The cloud has its own translated content area, below every header line.
+      context.save();
+      context.translate(40, cloudTop);
+      context.scale(scale, scale);
+      for (const word of layout.words) {
+        context.fillStyle = token(CATEGORY_DETAILS[word.category].token);
+        context.font = `700 ${word.size}px ${current.fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
+        context.fillText(word.text, word.x, word.y);
+      }
+      context.restore();
+      context.fillStyle = token('--sn-muted');
+      context.font = `400 16px ${current.fontFamily}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
+      context.fillText(`${countFormatter.format(layout.words.length)} dari ${countFormatter.format(words.length)} kata ditampilkan. Frekuensi adalah jumlah kemunculan.`, 40, cloudBottom + 30);
+      context.fillText(layout.omittedCount > 0
+        ? 'Kata yang tidak muat tetap tersedia pada tabel frekuensi lengkap.'
+        : 'Kategori kata merupakan petunjuk, bukan kesimpulan tentang penulisnya.', 40, cloudBottom + 54);
+
+      const { promise, resolve, reject } = Promise.withResolvers<Blob>();
+      canvas.toBlob((image) => image ? resolve(image) : reject(new Error('PNG encoding failed')), 'image/png');
+      const blob = await promise;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `suara-netizen-peta-kata-${label.toLowerCase().replace(/\s+/g, '-')}.png`;
+      link.href = url;
+      link.hidden = true;
+      document.body.appendChild(link);
+      try {
+        link.click();
+      } finally {
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch {
+      setExportError('Unduhan PNG gagal. Coba unduh kembali.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const status = words.length === 0
+    ? 'Tidak ada kata dalam kategori ini.'
+    : current?.error
+      ? 'Frekuensi kata tetap tersedia dalam tabel.'
+      : layout
+        ? `Menampilkan ${countFormatter.format(layout.words.length)} dari ${countFormatter.format(words.length)} kata.${layout.omittedCount > 0 ? ' Kata yang tidak muat tetap tersedia dalam tabel.' : ''}`
+        : 'Menyusun peta kata…';
+
+  return (
+    <figure className={styles.plot}>
+      {downloadable && (
+        <div className={styles.plotActions}>
+          <p className={styles.plotScope}>{label}</p>
+          <button
+            type="button"
+            className={styles.downloadButton}
+            onClick={() => { void downloadPNG(); }}
+            disabled={!layout || layout.words.length === 0 || isExporting}
+            aria-describedby={captionId}
+          >
+            <Download size={18} aria-hidden="true" />
+            {isExporting ? 'Menyiapkan PNG…' : 'Unduh PNG'}
+          </button>
+        </div>
+      )}
+      <div
+        ref={viewportRef}
+        className={`${styles.viewport} ${compact ? styles.compactViewport : ''}`}
+        aria-busy={isPending}
+      >
+        {layout && layout.words.length > 0 ? (
+          <svg
+            className={styles.svg}
+            viewBox={`0 0 ${layout.width} ${layout.height}`}
+            width={layout.width}
+            height={layout.height}
+            role="img"
+            aria-labelledby={titleId}
+            aria-describedby={descriptionId}
+            fontFamily={current?.fontFamily}
+          >
+            <title id={titleId}>Peta kata: {label}</title>
+            <desc id={descriptionId}>
+              {status} Ukuran kata mengikuti frekuensi. Jumlah dan kategori setiap kata tersedia pada tabel frekuensi lengkap di bawah.
+            </desc>
+            {layout.words.map((word) => (
+              <text key={word.id} x={word.x} y={word.y} fontSize={word.size} fontWeight={700} fill={categoryColor(word.category)}>
+                {word.text}
+                <title>{`${word.text}: ${countFormatter.format(word.value)} kali, ${CATEGORY_DETAILS[word.category].label}`}</title>
+              </text>
+            ))}
+          </svg>
+        ) : (
+          <p className={styles.plotMessage}>
+            {current?.error || (words.length === 0
+              ? 'Tidak ada kata dalam kategori ini.'
+              : layout
+                ? 'Kata tidak muat pada peta ini. Lihat tabel frekuensi di bawah.'
+                : 'Menyusun peta kata…')}
+          </p>
+        )}
+      </div>
+      <figcaption id={captionId} className={styles.caption} aria-live="polite">{status}</figcaption>
+      {exportError && <p className={styles.exportError} role="alert">{exportError}</p>}
+    </figure>
+  );
 }
 
 export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
-  const [viewMode, setViewMode] = useState<'cloud' | 'split' | 'barchart'>('cloud');
-  const [filterCategory, setFilterCategory] = useState<'all' | 'positif' | 'negatif' | 'judol'>('all');
-  const [placedWords, setPlacedWords] = useState<PlacedWord[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('cloud');
+  const [filterCategory, setFilterCategory] = useState<CategoryFilter>('all');
+  const headingId = useId();
+  const filterLabelId = useId();
+  const visualizationId = useId();
+  const chartHeadingId = useId();
 
-  // Normalisasi kategori jika membaca cache lama
-  const safeWords = words.map((w) => ({
-    ...w,
-    category: w.category || (w.type === 'judol' ? ('judol' as const) : ('netral' as const)),
-  }));
-
-  // Filter kata berdasarkan kategori yang dipilih
-  const filteredWords = safeWords.filter((w) => {
-    if (filterCategory === 'all') return true;
-    return w.category === filterCategory;
-  });
-
-  const judolWords = safeWords.filter((w) => w.category === 'judol');
-  const positiveWords = safeWords.filter((w) => w.category === 'positif');
-  const negativeWords = safeWords.filter((w) => w.category === 'negatif');
-
-  // Algoritma Archimedean Spiral Word Cloud Layout
-  useEffect(() => {
-    if (!filteredWords || filteredWords.length === 0) {
-      setPlacedWords([]);
-      return;
-    }
-
-    setIsGenerating(true);
-
-    const width = 760;
-    const height = 420;
-    const centerX = width / 2;
-    const centerY = height / 2;
-
-    const maxVal = Math.max(...filteredWords.map((w) => w.value), 1);
-    const minVal = Math.min(...filteredWords.map((w) => w.value), 1);
-
-    const boxes: Array<{ x: number; y: number; w: number; h: number }> = [];
-    const results: PlacedWord[] = [];
-
-    // Virtual canvas untuk mengukur ukuran teks
-    const measureCanvas = document.createElement('canvas');
-    const ctx = measureCanvas.getContext('2d');
-
-    filteredWords.forEach((wordItem, idx) => {
-      // Skala ukuran font dari 14px s/d 50px
-      const normalizedSize =
-        maxVal === minVal
-          ? 26
-          : 14 + ((wordItem.value - minVal) / (maxVal - minVal)) * 36;
-
-      // Rotasi 0 derajat (horizontal) atau 90 derajat (vertikal)
-      const rotate = idx % 5 === 2;
-
-      let textWidth = 60;
-      let textHeight = normalizedSize;
-
-      if (ctx) {
-        ctx.font = `bold ${normalizedSize}px sans-serif`;
-        textWidth = ctx.measureText(wordItem.text).width + 8;
-        textHeight = normalizedSize * 1.1;
-      }
-
-      const w = rotate ? textHeight : textWidth;
-      const h = rotate ? textWidth : textHeight;
-
-      // Pemilihan warna bertaraf kontras tinggi untuk background putih/terang
-      let color = '#0f172a'; // Netral / General (Charcoal / Almost Black)
-      if (wordItem.category === 'judol') {
-        color = '#dc2626'; // Judol / Spam (Bold Red)
-      } else if (wordItem.category === 'positif') {
-        color = '#059669'; // Positif (Emerald Green)
-      } else if (wordItem.category === 'negatif') {
-        color = '#ea580c'; // Negatif (Vibrant Orange)
-      }
-
-      // Archimedean Spiral Search
-      let placed = false;
-      let angle = 0;
-      const step = 0.35;
-      const spiralA = 2.2;
-
-      while (angle < 120 && !placed) {
-        const radius = spiralA * angle;
-        const x = centerX + radius * Math.cos(angle) - w / 2;
-        const y = centerY + radius * Math.sin(angle) - h / 2;
-
-        let collision = false;
-        if (x < 10 || x + w > width - 10 || y < 10 || y + h > height - 10) {
-          collision = true;
-        } else {
-          for (const b of boxes) {
-            if (
-              x < b.x + b.w &&
-              x + w > b.x &&
-              y < b.y + b.h &&
-              y + h > b.y
-            ) {
-              collision = true;
-              break;
-            }
-          }
-        }
-
-        if (!collision) {
-          boxes.push({ x, y, w, h });
-          results.push({
-            text: wordItem.text,
-            size: Math.round(normalizedSize),
-            x: Math.round(x + w / 2),
-            y: Math.round(y + h / 2),
-            rotate,
-            color,
-            category: wordItem.category,
-            value: wordItem.value,
-          });
-          placed = true;
-        }
-
-        angle += step;
-      }
-    });
-
-    setPlacedWords(results);
-    setIsGenerating(false);
-  }, [filteredWords, filterCategory]);
-
-  // Fungsi Download Gambar Word Cloud (PNG)
-  const downloadWordCloudPNG = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1200;
-    canvas.height = 700;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Background putih bersih
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Judul & Header
-    ctx.fillStyle = '#0f172a';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.fillText('Suara-Netizen • Analisis Sentimen & Word Cloud Komentar', 40, 50);
-
-    // Draw words
-    const scale = 1200 / 760;
-    placedWords.forEach((word) => {
-      ctx.save();
-      ctx.translate(word.x * scale, word.y * scale);
-      if (word.rotate) {
-        ctx.rotate(-Math.PI / 2);
-      }
-      ctx.fillStyle = word.color;
-      ctx.font = `bold ${Math.round(word.size * scale)}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(word.text, 0, 0);
-      ctx.restore();
-    });
-
-    // Buat link download
-    const link = document.createElement('a');
-    link.download = `suara-netizen-wordcloud-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  };
-
-  // Top 10 data untuk Bar Chart
-  const topBarData = safeWords.slice(0, 10).map((w) => ({
-    name: w.text,
-    frekuensi: w.value,
-    category: w.category,
-    color:
-      w.category === 'judol'
-        ? '#dc2626'
-        : w.category === 'positif'
-        ? '#059669'
-        : w.category === 'negatif'
-        ? '#ea580c'
-        : '#0f172a',
-  }));
+  // These references remain stable when a view, filter or download state changes.
+  const categorizedWords = useMemo(() => {
+    const all: WordCloudWord[] = words.map((word, index) => ({
+      id: `${index}-${word.text}`,
+      text: word.text,
+      value: word.value,
+      category: resolveCategory(word),
+    })).sort((left, right) => right.value - left.value);
+    const groups: Record<WordCloudCategory, WordCloudWord[]> = {
+      positif: [], negatif: [], netral: [], judol: [], unknown: [],
+    };
+    for (const word of all) groups[word.category].push(word);
+    return { all, groups };
+  }, [words]);
+  const filteredWords = useMemo(() => filterCategory === 'all'
+    ? categorizedWords.all
+    : categorizedWords.groups[filterCategory], [categorizedWords, filterCategory]);
+  const visibleCategories = useMemo(() => filterCategory === 'all'
+    ? CATEGORY_ORDER.filter((category) => categorizedWords.groups[category].length > 0)
+    : [filterCategory], [categorizedWords, filterCategory]);
+  const topBarWords = useMemo(() => filteredWords.slice(0, 10), [filteredWords]);
+  const scopeLabel = filterCategory === 'all' ? 'Semua kategori' : CATEGORY_DETAILS[filterCategory].label;
+  const maxFrequency = topBarWords[0]?.value ?? 0;
 
   return (
-    <div className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-6">
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Cloud className="w-5 h-5 text-blue-600" />
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-              Peta Kosa Kata & Analisis Frekuensi Kata (Word Cloud)
-            </h3>
-          </div>
-          <p className="text-xs text-slate-500">
-            Distribusi kata paling sering muncul di komentar dengan pembedaan warna sentimen dan istilah promosi.
+    <section className={styles.root} aria-labelledby={headingId} data-ui="word-cloud">
+      <div className={styles.header}>
+        <div className={styles.intro}>
+          <h3 id={headingId} className={styles.title}>Kata dalam komentar</h3>
+          <p className={styles.description}>
+            Lihat kata yang sering muncul. Kategori kata merupakan petunjuk, bukan kesimpulan tentang penulis komentar.
           </p>
         </div>
-
-        {/* View Mode Switcher */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs">
-          <button
-            onClick={() => setViewMode('cloud')}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === 'cloud'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Cloud className="w-3.5 h-3.5" />
-            Word Cloud
-          </button>
-
-          <button
-            onClick={() => setViewMode('split')}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === 'split'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            Dual Sentimen
-          </button>
-
-          <button
-            onClick={() => setViewMode('barchart')}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === 'barchart'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <BarChart2 className="w-3.5 h-3.5" />
-            Diagram Batang
-          </button>
+        <div className={styles.viewModes} role="group" aria-label="Tampilan frekuensi kata">
+          {VIEW_OPTIONS.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              className={`${styles.modeButton} ${viewMode === option.key ? styles.activeButton : ''}`}
+              aria-pressed={viewMode === option.key}
+              aria-controls={visualizationId}
+              onClick={() => setViewMode(option.key)}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Mode 1: Unified Archimedean Word Cloud */}
-      {viewMode === 'cloud' && (
-        <div className="space-y-4">
-          {/* Filter Sub-categories */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-slate-500 font-medium mr-1">Kategori:</span>
-              <button
-                onClick={() => setFilterCategory('all')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  filterCategory === 'all'
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Semua ({safeWords.length})
-              </button>
-              <button
-                onClick={() => setFilterCategory('positif')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
-                  filterCategory === 'positif'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                }`}
-              >
-                <Smile className="w-3 h-3" />
-                Positif ({positiveWords.length})
-              </button>
-              <button
-                onClick={() => setFilterCategory('negatif')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
-                  filterCategory === 'negatif'
-                    ? 'bg-orange-600 text-white'
-                    : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
-                }`}
-              >
-                <Frown className="w-3 h-3" />
-                Negatif ({negativeWords.length})
-              </button>
-              <button
-                onClick={() => setFilterCategory('judol')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
-                  filterCategory === 'judol'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-red-50 text-red-700 hover:bg-red-100'
-                }`}
-              >
-                <Flame className="w-3 h-3" />
-                Spam Promosi ({judolWords.length})
-              </button>
-            </div>
-
+      <div className={styles.controls}>
+        <p id={filterLabelId} className={styles.filterLabel}>Kategori kata</p>
+        <div className={styles.filterOptions} role="group" aria-labelledby={filterLabelId}>
+          <button
+            type="button"
+            className={`${styles.filterButton} ${filterCategory === 'all' ? styles.activeButton : ''}`}
+            aria-pressed={filterCategory === 'all'}
+            aria-controls={visualizationId}
+            onClick={() => setFilterCategory('all')}
+          >
+            Semua <span className={styles.filterCount}>({countFormatter.format(categorizedWords.all.length)})</span>
+          </button>
+          {CATEGORY_ORDER.filter((category) => category !== 'unknown' || categorizedWords.groups.unknown.length > 0 || filterCategory === 'unknown').map((category) => (
             <button
-              onClick={downloadWordCloudPNG}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1.5 shadow-sm"
+              key={category}
+              type="button"
+              className={`${styles.filterButton} ${filterCategory === category ? styles.activeButton : ''}`}
+              aria-pressed={filterCategory === category}
+              aria-controls={visualizationId}
+              onClick={() => setFilterCategory(category)}
             >
-              <Download className="w-3.5 h-3.5" />
-              Unduh Gambar (PNG)
+              {CATEGORY_DETAILS[category].label}
+              <span className={styles.filterCount}>({countFormatter.format(categorizedWords.groups[category].length)})</span>
             </button>
-          </div>
-
-          {/* SVG Canvas Render Area */}
-          <div className="relative w-full h-[420px] rounded-2xl bg-slate-50/80 border border-slate-200 overflow-hidden flex items-center justify-center">
-            <svg
-              viewBox="0 0 760 420"
-              className="w-full h-full select-none transition-opacity duration-300"
-              style={{ opacity: isGenerating ? 0.3 : 1 }}
-            >
-              {placedWords.map((item, idx) => (
-                <text
-                  key={`${item.text}-${idx}`}
-                  x={item.x}
-                  y={item.y}
-                  transform={item.rotate ? `rotate(-90 ${item.x} ${item.y})` : undefined}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontSize={item.size}
-                  fontWeight="bold"
-                  fill={item.color}
-                  className="cursor-pointer hover:opacity-75 transition-opacity font-sans"
-                >
-                  {item.text}
-                  <title>{`${item.text}: ${item.value}x (${item.category})`}</title>
-                </text>
-              ))}
-            </svg>
-
-            {/* Legend Overlay */}
-            <div className="absolute bottom-3 left-4 flex items-center gap-4 text-[11px] bg-white/95 px-3.5 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-              <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
-                Positif
-              </span>
-              <span className="flex items-center gap-1.5 font-semibold text-orange-700">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-600" />
-                Negatif
-              </span>
-              <span className="flex items-center gap-1.5 font-semibold text-red-700">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-600" />
-                Spam Promosi
-              </span>
-              <span className="flex items-center gap-1.5 font-semibold text-slate-800">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-900" />
-                Kosa Kata Umum
-              </span>
-            </div>
-          </div>
+          ))}
         </div>
+      </div>
+
+      {categorizedWords.groups.unknown.length > 0 && (
+        <p className={styles.notice}>
+          {countFormatter.format(categorizedWords.groups.unknown.length)} kata belum memiliki kategori. Kata tersebut tidak dianggap netral; frekuensinya tetap ditampilkan.
+        </p>
       )}
 
-      {/* Mode 2: Split Sentiment Comparison Cloud (Persis Gambar 2) */}
-      {viewMode === 'split' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Top / Left Half: Positive Cloud */}
-            <div className="p-5 rounded-2xl bg-emerald-50/40 border border-emerald-200 flex flex-col justify-between">
-              <div className="flex items-center justify-between border-b border-emerald-200/60 pb-3 mb-4">
-                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Smile className="w-4 h-4 text-emerald-600" />
-                  Kumpulan Kata Positif (Positive)
-                </span>
-                <span className="text-xs font-mono font-bold text-emerald-700">
-                  {positiveWords.length} Istilah
-                </span>
-              </div>
-
-              <div className="min-h-56 flex flex-wrap items-center justify-center gap-3 p-4">
-                {positiveWords.length > 0 ? (
-                  positiveWords.map((item, idx) => (
-                    <span
-                      key={idx}
-                      style={{ fontSize: `${Math.min(36, 14 + item.value * 3)}px` }}
-                      className="font-bold text-emerald-700 hover:text-emerald-900 transition-colors"
-                    >
-                      {item.text}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-xs text-slate-400">Tidak ada kata positif yang dominan.</span>
-                )}
-              </div>
-            </div>
-
-            {/* Bottom / Right Half: Negative & Judol Cloud */}
-            <div className="p-5 rounded-2xl bg-red-50/40 border border-red-200 flex flex-col justify-between">
-              <div className="flex items-center justify-between border-b border-red-200/60 pb-3 mb-4">
-                <span className="text-xs font-bold text-red-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Frown className="w-4 h-4 text-red-600" />
-                  Kumpulan Kata Negatif & Spam (Negative)
-                </span>
-                <span className="text-xs font-mono font-bold text-red-700">
-                  {negativeWords.length + judolWords.length} Istilah
-                </span>
-              </div>
-
-              <div className="min-h-56 flex flex-wrap items-center justify-center gap-3 p-4">
-                {[...negativeWords, ...judolWords].length > 0 ? (
-                  [...negativeWords, ...judolWords].map((item, idx) => (
-                    <span
-                      key={idx}
-                      style={{ fontSize: `${Math.min(36, 14 + item.value * 3)}px` }}
-                      className={`font-bold transition-colors ${
-                        item.category === 'judol' ? 'text-red-700 underline decoration-red-300' : 'text-orange-700'
-                      }`}
-                    >
-                      {item.text}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-xs text-slate-400">Tidak ada kata negatif atau spam yang dominan.</span>
-                )}
-              </div>
-            </div>
+      <div id={visualizationId} className={styles.visualization}>
+        {filteredWords.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyTitle}>{categorizedWords.all.length === 0 ? 'Belum ada kata untuk ditampilkan' : 'Tidak ada kata dalam kategori ini'}</p>
+            <p>{categorizedWords.all.length === 0 ? 'Hasil ini belum memuat frekuensi kata.' : 'Pilih Semua untuk melihat kata dari kategori lain.'}</p>
+            {categorizedWords.all.length > 0 && (
+              <button type="button" className={styles.resetButton} onClick={() => setFilterCategory('all')}>Tampilkan semua kata</button>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* Mode 3: Diagram Batang Distribusi Frekuensi (Persis Gambar 3) */}
-      {viewMode === 'barchart' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-              Top 10 Kata Paling Sering Muncul di Komentar
-            </h4>
-            <span className="text-xs text-slate-400">Satuan: Frekuensi</span>
-          </div>
-
-          <div className="h-72 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={topBarData}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-              >
-                <XAxis type="number" stroke="#94a3b8" fontSize={11} />
-                <YAxis dataKey="name" type="category" stroke="#475569" fontSize={12} width={80} />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
-                      return (
-                        <div className="bg-white border border-slate-200 px-3 py-2 rounded-lg shadow-lg text-xs space-y-1">
-                          <p className="font-bold text-slate-900">{d.name}</p>
-                          <p className="text-slate-600">
-                            Frekuensi: <span className="font-bold text-slate-900">{d.frekuensi} kali</span>
-                          </p>
-                          <p className="text-[11px] capitalize font-medium text-blue-600">
-                            Kategori: {d.category}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar dataKey="frekuensi" radius={[0, 6, 6, 0]}>
-                  {topBarData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+        ) : (
+          <>
+            {viewMode !== 'split' && (
+              <ul className={styles.legend} aria-label="Arti warna kategori kata">
+                {visibleCategories.map((category) => (
+                  <li key={category} className={styles.legendItem}>
+                    <span className={styles.swatch} style={{ backgroundColor: categoryColor(category) }} aria-hidden="true" />
+                    {CATEGORY_DETAILS[category].label}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {viewMode === 'cloud' && <WordCloudPlot words={filteredWords} label={scopeLabel} downloadable />}
+            {viewMode === 'split' && (
+              <div className={styles.splitGrid}>
+                {visibleCategories.map((category) => (
+                  <div key={category} className={styles.splitPanel}>
+                    <div className={styles.splitHeading}>
+                      <h4 className={styles.splitTitle}>
+                        <span className={styles.swatch} style={{ backgroundColor: categoryColor(category) }} aria-hidden="true" />
+                        {CATEGORY_DETAILS[category].label}
+                      </h4>
+                      <p className={styles.splitCount}>{countFormatter.format(categorizedWords.groups[category].length)} kata</p>
+                    </div>
+                    <WordCloudPlot words={categorizedWords.groups[category]} label={CATEGORY_DETAILS[category].label} compact />
+                  </div>
+                ))}
+              </div>
+            )}
+            {viewMode === 'barchart' && (
+              <figure className={styles.frequencyFigure} aria-labelledby={chartHeadingId}>
+                <div className={styles.frequencyHeader}>
+                  <h4 id={chartHeadingId}>Frekuensi kata</h4>
+                  <p>{countFormatter.format(topBarWords.length)} kata teratas</p>
+                </div>
+                <ol className={styles.frequencyList} aria-label="Kata terurut dari frekuensi tertinggi">
+                  {topBarWords.map((word) => (
+                    <li key={word.id} className={styles.frequencyItem}>
+                      <span className={styles.frequencyWord}>
+                        {word.text}
+                        <span className={styles.frequencyCategory}>{CATEGORY_DETAILS[word.category].label}</span>
+                      </span>
+                      <div className={styles.frequencyTrack} aria-hidden="true">
+                        <div className={styles.frequencyBar} style={{
+                          width: `${maxFrequency > 0 ? word.value / maxFrequency * 100 : 0}%`,
+                          backgroundColor: categoryColor(word.category),
+                        }} />
+                      </div>
+                      <span className={styles.frequencyValue}>{countFormatter.format(word.value)} kali</span>
+                    </li>
                   ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                </ol>
+                <figcaption className={styles.caption}>Skala dimulai dari 0; batang terpanjang menunjukkan {countFormatter.format(maxFrequency)} kemunculan.</figcaption>
+              </figure>
+            )}
+          </>
+        )}
+      </div>
+
+      {categorizedWords.all.length > 0 && (
+        <details className={styles.tableDetails}>
+          <summary className={styles.tableSummary}>Lihat tabel frekuensi lengkap ({countFormatter.format(categorizedWords.all.length)} kata)</summary>
+          <div className={styles.tableWrap}>
+            <table className={styles.frequencyTable}>
+              <caption>
+                Semua kata yang tersedia, diurutkan dari kemunculan terbanyak. Jumlah menunjukkan berapa kali kata muncul. Tabel memuat semua kategori, termasuk kata yang tidak muat pada peta.
+              </caption>
+              <thead>
+                <tr><th scope="col">Kata</th><th scope="col" className={styles.numeric}>Jumlah</th><th scope="col">Kategori</th></tr>
+              </thead>
+              <tbody>
+                {categorizedWords.all.map((word) => (
+                  <tr key={word.id}>
+                    <th scope="row">{word.text}</th>
+                    <td className={styles.numeric}>{countFormatter.format(word.value)}</td>
+                    <td>
+                      <span className={styles.tableCategory}>
+                        <span className={styles.swatch} style={{ backgroundColor: categoryColor(word.category) }} aria-hidden="true" />
+                        {CATEGORY_DETAILS[word.category].label}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </details>
       )}
-    </div>
+    </section>
   );
 }

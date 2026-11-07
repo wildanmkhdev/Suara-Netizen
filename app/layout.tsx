@@ -1,56 +1,54 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Bricolage_Grotesque } from 'next/font/google';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const bricolage = Bricolage_Grotesque({
+  variable: '--font-bricolage',
   subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  display: 'swap',
 });
 
 export const viewport: Viewport = {
   themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
+  colorScheme: 'light',
 };
 
 export const metadata: Metadata = {
-  title: 'Suara-Netizen — Analisis Sentimen Publik & Filter Spam Komentar',
+  title: 'Suara Netizen — Pahami percakapan di YouTube',
   description:
-    'Layanan analisis sentimen publik dan pendeteksi spam komentar media sosial berbasis kecerdasan buatan untuk memperkuat literasi informasi masyarakat Indonesia.',
+    'Baca sentimen, lihat kata yang ramai dibahas, dan kenali indikasi promosi dari komentar YouTube. Laporan yang membantu memahami percakapan.',
   keywords: [
     'Suara Netizen',
-    'Sentimen Analisis',
-    'Analisis Komentar YouTube',
-    'Deteksi Spam',
-    'Literasi Informasi',
-    'Opini Publik Indonesia',
+    'Analisis Sentimen',
+    'Komentar YouTube',
+    'Word Cloud Indonesia',
+    'Indikasi Promosi',
+    'Literasi Digital',
   ],
-  authors: [{ name: 'Suara-Netizen' }],
+  authors: [{ name: 'Suara Netizen' }],
   creator: 'wildanmkhdev',
   metadataBase: new URL('https://suara-netizen.vercel.app'),
+  alternates: { canonical: '/' },
+  robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
     locale: 'id_ID',
     url: 'https://suara-netizen.vercel.app',
-    siteName: 'Suara-Netizen',
-    title: 'Suara-Netizen — Analisis Sentimen Publik & Filter Spam Komentar',
-    description:
-      'Pahami sentimen publik nyata dan kenali pola spam di kolom komentar media sosial dengan mudah dan cepat.',
+    siteName: 'Suara Netizen',
+    title: 'Suara Netizen — Pahami percakapan di YouTube',
+    description: 'Baca sentimen, lihat kata yang menonjol, dan tinjau indikasi promosi dalam komentar.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Suara Netizen. Pahami suara warganet.' }],
   },
   twitter: {
-    card: 'summary',
-    title: 'Suara-Netizen — Analisis Sentimen Publik & Filter Spam Komentar',
-    description:
-      'Layanan analisis sentimen publik dan pendeteksi spam komentar media sosial untuk masyarakat Indonesia.',
+    card: 'summary_large_image',
+    title: 'Suara Netizen — Pahami percakapan di YouTube',
+    description: 'Lihat gambaran komentar YouTube dengan sentimen, word cloud, dan indikasi promosi.',
+    images: ['/opengraph-image'],
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icon.svg',
   },
 };
 
@@ -60,8 +58,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth`}>
-      <body className="min-h-full flex flex-col bg-background text-foreground selection:bg-primary/10 selection:text-primary font-sans antialiased">
+    <html lang="id" className={bricolage.variable}>
+      <body>
         {children}
       </body>
     </html>

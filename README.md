@@ -1,80 +1,51 @@
-# Suara-Netizen
+# Suara Netizen
 
-Platform analitik sentimen publik dan deteksi serbuan bot/afiliator judi online (judol) berbasis AI dengan **100% Free Production Architecture (Biaya Operasional Rp 0)** untuk memperkuat literasi digital masyarakat Indonesia.
+Layanan untuk membaca sentimen, frekuensi kata, dan indikasi promosi dalam komentar YouTube. Hasil membantu memahami percakapan; tidak membuktikan identitas akun, kebenaran sebuah klaim, atau tindakan penulis komentar.
 
----
+## Antarmuka
 
-## ⚡ Fitur Utama
+- Landing page putih dengan tipografi Bricolage Grotesque, informasi fitur, cara pakai, dan bantuan.
+- Input video YouTube dan Shorts publik, dengan label, validasi tautan, serta status proses dan kesalahan.
+- Dua contoh ilustratif: indikasi promosi dan percakapan biasa. Contoh tidak dikirim ke layanan eksternal atau disimpan sebagai pemindaian video.
+- Perkiraan sentimen, penanda promosi, ringkasan, serta filter sampel komentar.
+- Peta kata, tampilan per kategori, batang frekuensi, tabel lengkap, dan unduhan PNG. Kata yang tidak muat di gambar tetap ada di tabel.
+- Tidak ada feed arsip publik atau informasi model/infrastruktur di landing page.
 
-- **Pendeteksi Kontaminasi Bot & Judol (0–100%):** Mengombinasikan filter regex pola teks gaul (*gacor*, *maxwin*, *depo*, *zeus*, *wa.me*) dan inferensi LLM Llama-3.3-70B di Groq Cloud.
-- **Distribusi Sentimen Publik:** Pemetaan visual opini masyarakat (Positif, Netral, Negatif) menggunakan Recharts.
-- **Word Cloud Interaktif:** Pelacakan kata kunci terpopuler dengan penandaan khusus merah untuk istilah sindikat judol dan abu-abu untuk kata publik.
-- **Kartu Edukasi Literasi:** Ringkasan otomatis berisi saran pencegahan dan modus manipulasi yang terdeteksi.
-- **Penyimpanan Terindeks & pgvector:** Database PostgreSQL di Supabase dengan ekstensi `pgvector` untuk pencarian kemiripan semantik bot.
-- **Zero-Cost Out of the Box:** Aplikasi langsung dapat diuji coba dengan data demo bahkan sebelum Anda memasukkan API key!
+Kategori kata berbeda dari sentimen kalimat. Data lama yang belum memiliki kategori ditampilkan sebagai **Belum dikategorikan**, bukan diasumsikan netral.
 
----
+## Menjalankan proyek
 
-## 🛠️ The 100% Free Production Stack
-
-| Layer | Teknologi | Layanan / Provider | Biaya |
-|---|---|---|---|
-| **Frontend & API** | Next.js 15 (App Router) + Tailwind CSS + Lucide Icons | Vercel (Hobby Tier) | **Rp 0** |
-| **Database & pgvector** | PostgreSQL + pgvector extension | Supabase (Free Tier, Singapore) | **Rp 0** |
-| **Model AI Sentimen** | Llama-3.3-70B-Versatile (via Groq Cloud API) | Groq Cloud (Free Tier, 300+ token/s) | **Rp 0** |
-| **Ekstraksi Komentar** | YouTube Data API v3 | Google Cloud Console (10.000 unit/hari) | **Rp 0** |
-
----
-
-## 🚀 Panduan Memulai Cepat (Local Development)
-
-### 1. Masuk ke Direktori Proyek
 ```bash
-cd suara-netizen
-```
-
-### 2. Konfigurasi Environment Variables
-Salin berkas `.env.example` menjadi `.env.local`:
-```bash
-cp .env.example .env.local
-```
-
-Buka `.env.local` dan masukkan kunci API gratis Anda:
-```env
-# 1. Supabase (Daftar gratis di https://supabase.com)
-NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."
-SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOi..."
-
-# 2. Groq AI (Daftar 1 klik di https://console.groq.com/keys)
-GROQ_API_KEY="gsk_..."
-
-# 3. YouTube API (Aktifkan di https://console.cloud.google.com)
-YOUTUBE_API_KEY="AIzaSy..."
-```
-
-*(Catatan: Jika kunci belum diisi, web tetap bisa jalan dalam mode Demo/Simulasi otomatis).*
-
-### 3. Migrasi Database Supabase (pgvector)
-Anda punya 2 opsi mudah:
-- **Opsi A (Via Web Supabase):** Buka dashboard Supabase ➔ Menu **SQL Editor** ➔ Buka file `supabase/migrations/20261108000000_create_sentimen_judol_schema.sql` ➔ Copy dan klik **Run**.
-- **Opsi B (Via Supabase CLI):**
-  ```bash
-  supabase link --project-ref your-project-id
-  supabase db push
-  ```
-
-### 4. Jalankan Server Lokal
-```bash
+bun install
 bun run dev
 ```
-Buka browser di `http://localhost:3000`.
 
----
+Buka `http://localhost:3000`. Contoh ilustratif dapat digunakan tanpa kunci API. Untuk pemindaian video, gunakan konfigurasi lingkungan proyek yang sudah dipasang di `.env.local` atau lingkungan deployment. Jangan masukkan kunci rahasia ke source code atau Git.
 
-## 🚢 Panduan Deploy ke Production (Vercel)
+```bash
+bun run lint
+bun run build
+bun run start
+```
 
-1. Repository sudah terhubung ke GitHub: `https://github.com/wildanmkhdev/Suara-Netizen`
-2. Buka [vercel.com](https://vercel.com) ➔ Klik **Add New Project** ➔ Pilih repository **Suara-Netizen**.
-3. Di bagian **Environment Variables**, masukkan variabel dari `.env.local`.
-4. Klik **Deploy**! Web langsung live di domain `.vercel.app` bersertifikat SSL HTTPS gratis.
+## Styling
+
+CSS Modules menangani gaya komponen; `app/globals.css` menyimpan token bersama. Tailwind diproses melalui `@tailwindcss/postcss` pada `postcss.config.mjs`.
+
+Jangan menambahkan rule Turbopack yang mengubah semua `*.css` menjadi CSS global. Rule tersebut sebelumnya menghilangkan ekspor class dari `*.module.css`; build yang berhasil saja tidak membuktikan styling tampil. Periksa class dan computed style di browser.
+
+## Data dan deployment
+
+Skema database tetap berada di `supabase/migrations/`. Backend dan skema tidak diubah dalam remake frontend ini. Akurasi NLP dan autentikasi provider model bukan bagian dari verifikasi visual; hasil otomatis ditampilkan dengan peringatan bahwa hasil bersifat indikatif dan belum diverifikasi.
+
+Laporan tersimpan lama mungkin tidak membawa sampel komentar atau kategori kata. Antarmuka menampilkan kondisi kosong tersebut secara eksplisit.
+
+Repository: https://github.com/wildanmkhdev/Suara-Netizen
+
+Website: https://suara-netizen.vercel.app
+
+Paket gratis layanan hosting/API tetap mengikuti kuota dan ketentuan masing-masing penyedia, bukan jaminan biaya nol tanpa batas.
+
+## Aset
+
+Foto tangan memegang telepon: **Man-person-smartphone-technology (24029613340)**, www.Pixel.la Free Stock Photos, [Wikimedia Commons](https://commons.wikimedia.org/w/index.php?curid=51440745), [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Versi lokal di `public/images/literasi-digital.webp`; kredit ditampilkan di footer. Ilustrasi laporan dan grafik berasal dari contoh percakapan yang diberi label ilustratif.
