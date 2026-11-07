@@ -1,3 +1,4 @@
+export const maxDuration = 60;
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { detectJudolSpam, extractWordFrequencies } from '@/lib/judol-keywords';
@@ -21,6 +22,7 @@ interface YouTubeVideoItem {
 
 interface YouTubeCommentResponse {
   items?: YouTubeCommentThread[];
+  nextPageToken?: string;
 }
 
 interface YouTubeVideoResponse {
@@ -95,13 +97,34 @@ export async function POST(req: Request) {
 
     if (youtubeApiKey && videoIdMatch) {
       try {
-        const ytRes = await fetch(
-          `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=100&key=${youtubeApiKey}`
-        );
-        const ytData = (await ytRes.json()) as YouTubeCommentResponse;
+        const TARGET_MAX_COMMENTS = 1000;
+        const PAGE_SIZE = 100;
+        let pageToken: string | undefined = undefined;
+        let pagesFetched = 0;
+        const maxPages = Math.ceil(TARGET_MAX_COMMENTS / PAGE_SIZE); // 10 pages
 
-        if (ytData.items && ytData.items.length > 0) {
-          comments = ytData.items.map((item) => item.snippet.topLevelComment.snippet.textOriginal);
+        while (pagesFetched < maxPages) {
+          const pageParam = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '';
+          const ytRes = await fetch(
+            `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${videoId}&maxResults=${PAGE_SIZE}${pageParam}&key=${youtubeApiKey}`
+          );
+          const ytData = (await ytRes.json()) as YouTubeCommentResponse;
+
+          if (ytData.items && ytData.items.length > 0) {
+            const pageComments = ytData.items.map(
+              (item) => item.snippet.topLevelComment.snippet.textOriginal
+            );
+            comments.push(...pageComments);
+            pagesFetched++;
+          } else {
+            break;
+          }
+
+          if (ytData.nextPageToken && comments.length < TARGET_MAX_COMMENTS) {
+            pageToken = ytData.nextPageToken;
+          } else {
+            break;
+          }
         }
 
         // Ambil info detail video
