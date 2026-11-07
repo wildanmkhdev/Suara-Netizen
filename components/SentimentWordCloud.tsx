@@ -44,16 +44,21 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
   const [placedWords, setPlacedWords] = useState<PlacedWord[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Normalisasi kategori jika membaca cache lama
+  const safeWords = words.map((w) => ({
+    ...w,
+    category: w.category || (w.type === 'judol' ? ('judol' as const) : ('netral' as const)),
+  }));
+
   // Filter kata berdasarkan kategori yang dipilih
-  const filteredWords = words.filter((w) => {
+  const filteredWords = safeWords.filter((w) => {
     if (filterCategory === 'all') return true;
     return w.category === filterCategory;
   });
 
-  const judolWords = words.filter((w) => w.category === 'judol');
-  const positiveWords = words.filter((w) => w.category === 'positif');
-  const negativeWords = words.filter((w) => w.category === 'negatif');
-
+  const judolWords = safeWords.filter((w) => w.category === 'judol');
+  const positiveWords = safeWords.filter((w) => w.category === 'positif');
+  const negativeWords = safeWords.filter((w) => w.category === 'negatif');
   // Algoritma Archimedean Spiral Word Cloud Layout (Persis seperti Python WordCloud)
   useEffect(() => {
     if (!filteredWords || filteredWords.length === 0) {
