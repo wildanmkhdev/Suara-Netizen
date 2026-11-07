@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WordFrequencyItem } from '@/lib/judol-keywords';
 import {
   Cloud,
@@ -10,7 +10,6 @@ import {
   Download,
   BarChart2,
   Layers,
-  Sparkles,
 } from 'lucide-react';
 import {
   BarChart,
@@ -40,7 +39,6 @@ interface PlacedWord {
 export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
   const [viewMode, setViewMode] = useState<'cloud' | 'split' | 'barchart'>('cloud');
   const [filterCategory, setFilterCategory] = useState<'all' | 'positif' | 'negatif' | 'judol'>('all');
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [placedWords, setPlacedWords] = useState<PlacedWord[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -59,7 +57,8 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
   const judolWords = safeWords.filter((w) => w.category === 'judol');
   const positiveWords = safeWords.filter((w) => w.category === 'positif');
   const negativeWords = safeWords.filter((w) => w.category === 'negatif');
-  // Algoritma Archimedean Spiral Word Cloud Layout (Persis seperti Python WordCloud)
+
+  // Algoritma Archimedean Spiral Word Cloud Layout
   useEffect(() => {
     if (!filteredWords || filteredWords.length === 0) {
       setPlacedWords([]);
@@ -69,7 +68,7 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
     setIsGenerating(true);
 
     const width = 760;
-    const height = 440;
+    const height = 420;
     const centerX = width / 2;
     const centerY = height / 2;
 
@@ -84,14 +83,14 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
     const ctx = measureCanvas.getContext('2d');
 
     filteredWords.forEach((wordItem, idx) => {
-      // Skala ukuran font dari 14px s/d 54px
+      // Skala ukuran font dari 14px s/d 50px
       const normalizedSize =
         maxVal === minVal
-          ? 28
-          : 14 + ((wordItem.value - minVal) / (maxVal - minVal)) * 40;
+          ? 26
+          : 14 + ((wordItem.value - minVal) / (maxVal - minVal)) * 36;
 
       // Rotasi 0 derajat (horizontal) atau 90 derajat (vertikal)
-      const rotate = idx % 5 === 2; // ~20% kata vertikal untuk variasi visual artistik
+      const rotate = idx % 5 === 2;
 
       let textWidth = 60;
       let textHeight = normalizedSize;
@@ -105,14 +104,14 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
       const w = rotate ? textHeight : textWidth;
       const h = rotate ? textWidth : textHeight;
 
-      // Pemilihan warna berdasarkan sentimen
-      let color = '#38bdf8'; // Netral / General (Sky Cyan)
+      // Pemilihan warna bertaraf kontras tinggi untuk background putih/terang
+      let color = '#0f172a'; // Netral / General (Charcoal / Almost Black)
       if (wordItem.category === 'judol') {
-        color = '#ff0055'; // Judol / Spam (Bright Crimson Neon)
+        color = '#dc2626'; // Judol / Spam (Bold Red)
       } else if (wordItem.category === 'positif') {
-        color = '#10b981'; // Positif (Emerald Green)
+        color = '#059669'; // Positif (Emerald Green)
       } else if (wordItem.category === 'negatif') {
-        color = '#f97316'; // Negatif (Vibrant Orange-Red)
+        color = '#ea580c'; // Negatif (Vibrant Orange)
       }
 
       // Archimedean Spiral Search
@@ -126,7 +125,6 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
         const x = centerX + radius * Math.cos(angle) - w / 2;
         const y = centerY + radius * Math.sin(angle) - h / 2;
 
-        // Cek tabrakan bounding box
         let collision = false;
         if (x < 10 || x + w > width - 10 || y < 10 || y + h > height - 10) {
           collision = true;
@@ -175,14 +173,14 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Background gelap modern
-    ctx.fillStyle = '#060911';
+    // Background putih bersih
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Judul & Watermark
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '18px sans-serif';
-    ctx.fillText('Suara-Netizen AI • Analisis Sentimen & Word Cloud', 40, 50);
+    // Judul & Header
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('Suara-Netizen • Analisis Sentimen & Word Cloud Komentar', 40, 50);
 
     // Draw words
     const scale = 1200 / 760;
@@ -208,44 +206,44 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
   };
 
   // Top 10 data untuk Bar Chart
-  const topBarData = words.slice(0, 10).map((w) => ({
+  const topBarData = safeWords.slice(0, 10).map((w) => ({
     name: w.text,
     frekuensi: w.value,
     category: w.category,
     color:
       w.category === 'judol'
-        ? '#ef4444'
+        ? '#dc2626'
         : w.category === 'positif'
-        ? '#10b981'
+        ? '#059669'
         : w.category === 'negatif'
-        ? '#f97316'
-        : '#38bdf8',
+        ? '#ea580c'
+        : '#0f172a',
   }));
 
   return (
-    <div className="p-6 rounded-3xl border border-border/80 bg-card/70 backdrop-blur-xl shadow-xl space-y-6">
+    <div className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-6">
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Cloud className="w-5 h-5 text-primary" />
-            <h3 className="text-base font-extrabold text-foreground tracking-tight">
-              Visualisasi Word Cloud & Analisis Frekuensi Kata
+            <Cloud className="w-5 h-5 text-blue-600" />
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+              Peta Kosa Kata & Analisis Frekuensi Kata (Word Cloud)
             </h3>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Grafik distribusi kosa kata yang diekstraksi dari komentar YouTube berdasarkan frekuensi kemunculan dan polaritas sentimen.
+          <p className="text-xs text-slate-500">
+            Distribusi kata paling sering muncul di komentar dengan pembedaan warna sentimen dan istilah promosi.
           </p>
         </div>
 
         {/* View Mode Switcher */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/60 border border-border/60 self-start sm:self-auto text-xs">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs">
           <button
             onClick={() => setViewMode('cloud')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
               viewMode === 'cloud'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Cloud className="w-3.5 h-3.5" />
@@ -256,8 +254,8 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
             onClick={() => setViewMode('split')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
               viewMode === 'split'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -268,8 +266,8 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
             onClick={() => setViewMode('barchart')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
               viewMode === 'barchart'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <BarChart2 className="w-3.5 h-3.5" />
@@ -284,23 +282,23 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
           {/* Filter Sub-categories */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="text-muted-foreground font-medium mr-1">Filter Kategori:</span>
+              <span className="text-slate-500 font-medium mr-1">Kategori:</span>
               <button
                 onClick={() => setFilterCategory('all')}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                   filterCategory === 'all'
-                    ? 'bg-primary/20 text-primary border border-primary/40'
-                    : 'bg-muted/40 text-muted-foreground hover:text-foreground'
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                Semua ({words.length})
+                Semua ({safeWords.length})
               </button>
               <button
                 onClick={() => setFilterCategory('positif')}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1 ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
                   filterCategory === 'positif'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    : 'bg-muted/40 text-muted-foreground hover:text-emerald-400'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                 }`}
               >
                 <Smile className="w-3 h-3" />
@@ -308,10 +306,10 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
               </button>
               <button
                 onClick={() => setFilterCategory('negatif')}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1 ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
                   filterCategory === 'negatif'
-                    ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
-                    : 'bg-muted/40 text-muted-foreground hover:text-orange-400'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
                 }`}
               >
                 <Frown className="w-3 h-3" />
@@ -319,20 +317,20 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
               </button>
               <button
                 onClick={() => setFilterCategory('judol')}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1 ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
                   filterCategory === 'judol'
-                    ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                    : 'bg-muted/40 text-muted-foreground hover:text-red-400'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-red-50 text-red-700 hover:bg-red-100'
                 }`}
               >
                 <Flame className="w-3 h-3" />
-                Spam Judol ({judolWords.length})
+                Spam Promosi ({judolWords.length})
               </button>
             </div>
 
             <button
               onClick={downloadWordCloudPNG}
-              className="px-3 py-1.5 rounded-lg border border-border/80 hover:border-primary/50 bg-card hover:bg-muted text-xs font-semibold text-primary transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1.5 shadow-sm"
             >
               <Download className="w-3.5 h-3.5" />
               Unduh Gambar (PNG)
@@ -340,9 +338,9 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
           </div>
 
           {/* SVG Canvas Render Area */}
-          <div className="relative w-full h-[440px] rounded-2xl bg-gradient-to-b from-[#090e1c] to-[#060911] border border-border/60 overflow-hidden flex items-center justify-center shadow-inner">
+          <div className="relative w-full h-[420px] rounded-2xl bg-slate-50/80 border border-slate-200 overflow-hidden flex items-center justify-center">
             <svg
-              viewBox="0 0 760 440"
+              viewBox="0 0 760 420"
               className="w-full h-full select-none transition-opacity duration-300"
               style={{ opacity: isGenerating ? 0.3 : 1 }}
             >
@@ -357,7 +355,7 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
                   fontSize={item.size}
                   fontWeight="bold"
                   fill={item.color}
-                  className="cursor-pointer hover:opacity-80 transition-opacity drop-shadow-sm font-sans"
+                  className="cursor-pointer hover:opacity-75 transition-opacity font-sans"
                 >
                   {item.text}
                   <title>{`${item.text}: ${item.value}x (${item.category})`}</title>
@@ -366,22 +364,22 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
             </svg>
 
             {/* Legend Overlay */}
-            <div className="absolute bottom-3 left-4 flex items-center gap-4 text-[10px] bg-background/80 backdrop-blur px-3 py-1.5 rounded-lg border border-border/60">
-              <span className="flex items-center gap-1.5 font-medium text-emerald-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                Sentimen Positif
+            <div className="absolute bottom-3 left-4 flex items-center gap-4 text-[11px] bg-white/95 px-3.5 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+              <span className="flex items-center gap-1.5 font-semibold text-emerald-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                Positif
               </span>
-              <span className="flex items-center gap-1.5 font-medium text-orange-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                Sentimen Negatif
+              <span className="flex items-center gap-1.5 font-semibold text-orange-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-orange-600" />
+                Negatif
               </span>
-              <span className="flex items-center gap-1.5 font-medium text-red-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
-                Indikasi Spam Judol
+              <span className="flex items-center gap-1.5 font-semibold text-red-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-600" />
+                Spam Promosi
               </span>
-              <span className="flex items-center gap-1.5 font-medium text-sky-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
-                Kosa Kata Publik
+              <span className="flex items-center gap-1.5 font-semibold text-slate-800">
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-900" />
+                Kosa Kata Umum
               </span>
             </div>
           </div>
@@ -393,13 +391,13 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Top / Left Half: Positive Cloud */}
-            <div className="p-5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 flex flex-col justify-between">
-              <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3 mb-4">
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Smile className="w-4 h-4" />
+            <div className="p-5 rounded-2xl bg-emerald-50/40 border border-emerald-200 flex flex-col justify-between">
+              <div className="flex items-center justify-between border-b border-emerald-200/60 pb-3 mb-4">
+                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Smile className="w-4 h-4 text-emerald-600" />
                   Kumpulan Kata Positif (Positive)
                 </span>
-                <span className="text-xs font-mono text-emerald-300">
+                <span className="text-xs font-mono font-bold text-emerald-700">
                   {positiveWords.length} Istilah
                 </span>
               </div>
@@ -410,25 +408,25 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
                     <span
                       key={idx}
                       style={{ fontSize: `${Math.min(36, 14 + item.value * 3)}px` }}
-                      className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors drop-shadow"
+                      className="font-bold text-emerald-700 hover:text-emerald-900 transition-colors"
                     >
                       {item.text}
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs text-muted-foreground">Tidak ada kata positif yang dominan.</span>
+                  <span className="text-xs text-slate-400">Tidak ada kata positif yang dominan.</span>
                 )}
               </div>
             </div>
 
             {/* Bottom / Right Half: Negative & Judol Cloud */}
-            <div className="p-5 rounded-2xl bg-red-950/20 border border-red-500/30 flex flex-col justify-between">
-              <div className="flex items-center justify-between border-b border-red-500/20 pb-3 mb-4">
-                <span className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Frown className="w-4 h-4" />
-                  Kumpulan Kata Negatif & Judol (Negative)
+            <div className="p-5 rounded-2xl bg-red-50/40 border border-red-200 flex flex-col justify-between">
+              <div className="flex items-center justify-between border-b border-red-200/60 pb-3 mb-4">
+                <span className="text-xs font-bold text-red-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Frown className="w-4 h-4 text-red-600" />
+                  Kumpulan Kata Negatif & Spam (Negative)
                 </span>
-                <span className="text-xs font-mono text-red-300">
+                <span className="text-xs font-mono font-bold text-red-700">
                   {negativeWords.length + judolWords.length} Istilah
                 </span>
               </div>
@@ -439,15 +437,15 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
                     <span
                       key={idx}
                       style={{ fontSize: `${Math.min(36, 14 + item.value * 3)}px` }}
-                      className={`font-bold transition-colors drop-shadow ${
-                        item.category === 'judol' ? 'text-red-500 underline decoration-red-500/40' : 'text-orange-400'
+                      className={`font-bold transition-colors ${
+                        item.category === 'judol' ? 'text-red-700 underline decoration-red-300' : 'text-orange-700'
                       }`}
                     >
                       {item.text}
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs text-muted-foreground">Tidak ada kata negatif/judol yang dominan.</span>
+                  <span className="text-xs text-slate-400">Tidak ada kata negatif atau spam yang dominan.</span>
                 )}
               </div>
             </div>
@@ -459,10 +457,10 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
       {viewMode === 'barchart' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
               Top 10 Kata Paling Sering Muncul di Komentar
             </h4>
-            <span className="text-xs text-muted-foreground">Satuan: Frekuensi</span>
+            <span className="text-xs text-slate-400">Satuan: Frekuensi</span>
           </div>
 
           <div className="h-72 w-full pt-2">
@@ -472,19 +470,21 @@ export function SentimentWordCloud({ words }: SentimentWordCloudProps) {
                 layout="vertical"
                 margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
               >
-                <XAxis type="number" stroke="#64748b" fontSize={11} />
-                <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={11} width={80} />
+                <XAxis type="number" stroke="#94a3b8" fontSize={11} />
+                <YAxis dataKey="name" type="category" stroke="#475569" fontSize={12} width={80} />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
-                        <div className="bg-popover border border-border px-3 py-1.5 rounded-lg shadow-md text-xs space-y-1">
-                          <p className="font-bold text-popover-foreground">{d.name}</p>
-                          <p className="text-muted-foreground">
-                            Frekuensi: <span className="font-bold text-foreground">{d.frekuensi} kali</span>
+                        <div className="bg-white border border-slate-200 px-3 py-2 rounded-lg shadow-lg text-xs space-y-1">
+                          <p className="font-bold text-slate-900">{d.name}</p>
+                          <p className="text-slate-600">
+                            Frekuensi: <span className="font-bold text-slate-900">{d.frekuensi} kali</span>
                           </p>
-                          <p className="text-[10px] capitalize text-primary">Kategori: {d.category}</p>
+                          <p className="text-[11px] capitalize font-medium text-blue-600">
+                            Kategori: {d.category}
+                          </p>
                         </div>
                       );
                     }

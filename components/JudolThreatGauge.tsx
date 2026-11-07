@@ -10,24 +10,27 @@ interface JudolThreatGaugeProps {
 export function JudolThreatGauge({ score }: JudolThreatGaugeProps) {
   const rounded = Math.round(score);
 
-  // Status and colors
-  let color = 'text-emerald-500';
-  let bgColor = 'bg-emerald-500/10 border-emerald-500/30';
+  // Status and colors for clean light mode
+  let color = 'text-emerald-600';
+  let strokeColor = '#059669';
+  let badgeBg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
   let statusText = 'Aman / Rendah';
-  let description = 'Komentar didominasi diskusi organik pengguna tanpa indikasi bot terorganisir.';
+  let description = 'Komentar didominasi diskusi organik pengguna tanpa indikasi akun spam manipulatif.';
   let Icon = ShieldCheck;
 
   if (rounded >= 40) {
-    color = 'text-red-500';
-    bgColor = 'bg-red-500/10 border-red-500/30';
-    statusText = 'Bahaya Kontaminasi Tinggi';
-    description = 'Terdeteksi serbuan bot/afiliator judol dengan promosi slot, link bio, dan pola akun terkoordinasi.';
+    color = 'text-red-600';
+    strokeColor = '#dc2626';
+    badgeBg = 'bg-red-50 text-red-700 border-red-200';
+    statusText = 'Indikasi Spam Tinggi';
+    description = 'Terdeteksi banyak komentar promosi berulang, ajakan link mencurigakan, dan pola akun terkoordinasi.';
     Icon = ShieldAlert;
   } else if (rounded >= 15) {
-    color = 'text-amber-500';
-    bgColor = 'bg-amber-500/10 border-amber-500/30';
+    color = 'text-amber-600';
+    strokeColor = '#d97706';
+    badgeBg = 'bg-amber-50 text-amber-700 border-amber-200';
     statusText = 'Waspada / Sedang';
-    description = 'Terdapat beberapa kata kunci mencurigakan atau promosi samar yang perlu diwaspadai.';
+    description = 'Terdapat beberapa kata kunci promosi terselubung atau ajakan mencurigakan yang perlu diperhatikan.';
     Icon = AlertTriangle;
   }
 
@@ -37,11 +40,11 @@ export function JudolThreatGauge({ score }: JudolThreatGaugeProps) {
   const strokeDashoffset = circumference - (rounded / 100) * circumference;
 
   return (
-    <div className={`p-6 rounded-2xl border ${bgColor} flex flex-col items-center text-center transition-all`}>
-      <div className="flex items-center gap-2 mb-4">
+    <div className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col items-center text-center transition-all">
+      <div className="flex items-center gap-2 mb-3">
         <Icon className={`w-5 h-5 ${color}`} />
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Indikator Risiko Judol
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+          Tingkat Risiko Kontaminasi Spam
         </h3>
       </div>
 
@@ -51,7 +54,7 @@ export function JudolThreatGauge({ score }: JudolThreatGaugeProps) {
             cx="72"
             cy="72"
             r={radius}
-            className="text-muted/20"
+            className="text-slate-100"
             strokeWidth="10"
             stroke="currentColor"
             fill="transparent"
@@ -60,27 +63,26 @@ export function JudolThreatGauge({ score }: JudolThreatGaugeProps) {
             cx="72"
             cy="72"
             r={radius}
-            className={color}
+            stroke={strokeColor}
             strokeWidth="10"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
-            stroke="currentColor"
             fill="transparent"
             style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
           />
         </svg>
         <div className="absolute flex flex-col items-center">
           <span className={`text-3xl font-extrabold ${color}`}>{rounded}%</span>
-          <span className="text-[11px] font-medium text-muted-foreground">Tingkat Risiko</span>
+          <span className="text-[11px] font-semibold text-slate-400">Skor Risiko</span>
         </div>
       </div>
 
       <div className="mt-3">
-        <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 ${bgColor} ${color}`}>
+        <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 border ${badgeBg}`}>
           {statusText}
         </div>
-        <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">{description}</p>
+        <p className="text-xs text-slate-600 leading-relaxed max-w-xs">{description}</p>
       </div>
     </div>
   );
