@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090d16;
+  --background: #060911;
   --foreground: #f8fafc;
-  --card: #0f172a;
+  --card: #0d1424;
   --card-foreground: #f8fafc;
-  --popover: #0f172a;
+  --popover: #0d1424;
   --popover-foreground: #f8fafc;
   --primary: #38bdf8;
-  --primary-foreground: #090d16;
-  --muted: #1e293b;
+  --primary-foreground: #040814;
+  --muted: #172238;
   --muted-foreground: #94a3b8;
-  --border: #334155;
-  --radius: 0.75rem;
+  --border: #22324e;
+  --radius: 0.875rem;
 }
 
 @theme inline {
@@ -32,4 +32,40 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(56, 189, 248, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 40%, rgba(16, 185, 129, 0.05), transparent),
+    radial-gradient(ellipse 60% 40% at 10% 70%, rgba(239, 68, 68, 0.05), transparent);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(13, 20, 36, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.glass-panel-danger {
+  background: rgba(239, 68, 68, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #060911;
+}
+::-webkit-scrollbar-thumb {
+  background: #22324e;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
 }
