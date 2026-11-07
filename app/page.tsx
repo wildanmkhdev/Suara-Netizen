@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { JudolThreatGauge } from '@/components/JudolThreatGauge';
 import { SentimentChart } from '@/components/SentimentChart';
-import { WordFrequencyList } from '@/components/WordFrequencyList';
+import { SentimentWordCloud } from '@/components/SentimentWordCloud';
+import { WordFrequencyItem } from '@/lib/judol-keywords';
 import { LiteracySummaryCard } from '@/components/LiteracySummaryCard';
 import { CommentsTable } from '@/components/CommentsTable';
 import {
@@ -43,7 +44,7 @@ interface AnalysisResult {
     negatif: number;
   };
   judol_keywords_found: string[];
-  word_frequencies: Array<{ text: string; value: number; type: 'judol' | 'normal' }>;
+  word_frequencies: WordFrequencyItem[];
   executive_summary: string;
   comments_sample?: Array<{
     text: string;
@@ -379,7 +380,8 @@ export default function Home() {
           />
 
           {/* Keyword Analytics & Word Cloud */}
-          <WordFrequencyList words={result.word_frequencies} />
+          {/* Advanced Archimedean Word Cloud & Sentiment Split */}
+          <SentimentWordCloud words={result.word_frequencies} />
 
           {/* Comment Stream Samples */}
           {result.comments_sample && <CommentsTable comments={result.comments_sample} />}

@@ -90,6 +90,29 @@ const STOP_WORDS: Record<string, true> = {
   the: true, is: true, a: true, in: true, of: true, to: true, for: true, and: true, or: true, it: true, you: true, i: true,
 };
 
+const POSITIVE_WORDS: Record<string, true> = {
+  bagus: true, mantap: true, keren: true, edukasi: true, edukatif: true, terima: true, kasih: true,
+  bermanfaat: true, hebat: true, setuju: true, cerdas: true, informatif: true, berkah: true, sukses: true,
+  suka: true, cinta: true, rekomen: true, rekomendasi: true, salut: true, top: true, juara: true,
+  membantu: true, benar: true, sepakat: true, semangat: true, terbaik: true, puas: true, senang: true,
+  bersyukur: true, terimakasih: true, respect: true, inspirasi: true, jelas: true, runut: true,
+};
+
+const NEGATIVE_WORDS: Record<string, true> = {
+  kecewa: true, rugi: true, rungkad: true, hancur: true, rusak: true, bohong: true, penipu: true,
+  parah: true, nyesel: true, menyesal: true, stres: true, miskin: true, ludes: true, hutang: true,
+  terjebak: true, sengsara: true, haram: true, tangkap: true, bahaya: true, bodoh: true, fitnah: true,
+  buruk: true, jelek: true, jahat: true, tertipu: true, miris: true, korban: true, kapok: true,
+  haramkan: true, manipulasi: true, resah: true, meresahkan: true, lapor: true, bajingan: true,
+};
+
+export interface WordFrequencyItem {
+  text: string;
+  value: number;
+  type: 'judol' | 'normal';
+  category: 'positif' | 'negatif' | 'judol' | 'netral';
+}
+
 /**
  * Mendeteksi apakah suatu teks mengandung pola judol dan kata kunci apa saja yang terdeteksi
  */
@@ -106,10 +129,10 @@ export function detectJudolSpam(text: string): { isJudol: boolean; matchedKeywor
 }
 
 /**
- * Menghitung frekuensi kata untuk Word Cloud & Keyword Analytics
+ * Menghitung frekuensi kata untuk Word Cloud & Sentiment Analytics
  */
-export function extractWordFrequencies(comments: string[]): Array<{ text: string; value: number; type: 'judol' | 'normal' }> {
-  const freqMap: Record<string, { count: number; isJudol: boolean }> = {};
+export function extractWordFrequencies(comments: string[]): WordFrequencyItem[] {
+  const freqMap: Record<string, { count: number; category: 'positif' | 'negatif' | 'judol' | 'netral' }> = {};
 
   comments.forEach((comment) => {
     // Normalisasi teks
@@ -124,9 +147,18 @@ export function extractWordFrequencies(comments: string[]): Array<{ text: string
       if (w.length < 3 || STOP_WORDS[w] || /^\d+$/.test(w)) return;
 
       const isJudolKeyword = JUDOL_PATTERNS.some((p) => p.toLowerCase() === w);
+      let cat: 'positif' | 'negatif' | 'judol' | 'netral' = 'netral';
+
+      if (isJudolKeyword) {
+        cat = 'judol';
+      } else if (POSITIVE_WORDS[w]) {
+        cat = 'positif';
+      } else if (NEGATIVE_WORDS[w]) {
+        cat = 'negatif';
+      }
 
       if (!freqMap[w]) {
-        freqMap[w] = { count: 0, isJudol: isJudolKeyword };
+        freqMap[w] = { count: 0, category: cat };
       }
       freqMap[w].count += 1;
     });
@@ -136,8 +168,9 @@ export function extractWordFrequencies(comments: string[]): Array<{ text: string
     .map(([text, data]) => ({
       text,
       value: data.count,
-      type: data.isJudol ? ('judol' as const) : ('normal' as const),
+      type: data.category === 'judol' ? ('judol' as const) : ('normal' as const),
+      category: data.category,
     }))
     .sort((a, b) => b.value - a.value)
-    .slice(0, 30); // Top 30 kata
+    .slice(0, 50); // Ambil top 50 kata agar word cloud padat dan indah
 }

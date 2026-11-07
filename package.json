@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
+    "@types/d3-cloud": "^1.2.9",
     "clsx": "^2.1.1",
+    "d3-cloud": "^2.0.0",
     "lucide-react": "^1.70.0",
     "next": "16.4.5",
     "react": "19.3.0",
