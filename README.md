@@ -1,4 +1,4 @@
-# 🛡️ SiberLiterasi AI — Sentimen & Deteksi Bot Judol
+# Suara-Netizen
 
 Platform analitik sentimen publik dan deteksi serbuan bot/afiliator judi online (judol) berbasis AI dengan **100% Free Production Architecture (Biaya Operasional Rp 0)** untuk memperkuat literasi digital masyarakat Indonesia.
 
@@ -6,9 +6,9 @@ Platform analitik sentimen publik dan deteksi serbuan bot/afiliator judi online 
 
 ## ⚡ Fitur Utama
 
-- **Pendeteksi Kontaminasi Judol (0–100%):** Mengombinasikan filter regex pola teks gaul (*gacor*, *maxwin*, *depo*, *zeus*, *wa.me*) dan inferensi LLM Llama-3.3-70B.
+- **Pendeteksi Kontaminasi Bot & Judol (0–100%):** Mengombinasikan filter regex pola teks gaul (*gacor*, *maxwin*, *depo*, *zeus*, *wa.me*) dan inferensi LLM Llama-3.3-70B di Groq Cloud.
 - **Distribusi Sentimen Publik:** Pemetaan visual opini masyarakat (Positif, Netral, Negatif) menggunakan Recharts.
-- **Word Cloud Interaktif:** Pelacakan kata kunci terpopuler dengan penandaan khusus merah untuk istilah sindikat judol.
+- **Word Cloud Interaktif:** Pelacakan kata kunci terpopuler dengan penandaan khusus merah untuk istilah sindikat judol dan abu-abu untuk kata publik.
 - **Kartu Edukasi Literasi:** Ringkasan otomatis berisi saran pencegahan dan modus manipulasi yang terdeteksi.
 - **Penyimpanan Terindeks & pgvector:** Database PostgreSQL di Supabase dengan ekstensi `pgvector` untuk pencarian kemiripan semantik bot.
 - **Zero-Cost Out of the Box:** Aplikasi langsung dapat diuji coba dengan data demo bahkan sebelum Anda memasukkan API key!
@@ -30,7 +30,7 @@ Platform analitik sentimen publik dan deteksi serbuan bot/afiliator judi online 
 
 ### 1. Masuk ke Direktori Proyek
 ```bash
-cd /home/wildan/sentimen-judol-analyzer
+cd suara-netizen
 ```
 
 ### 2. Konfigurasi Environment Variables
@@ -46,7 +46,7 @@ NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."
 SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOi..."
 
-# 2. Groq AI (Daftar 1-klik di https://console.groq.com/keys)
+# 2. Groq AI (Daftar 1 klik di https://console.groq.com/keys)
 GROQ_API_KEY="gsk_..."
 
 # 3. YouTube API (Aktifkan di https://console.cloud.google.com)
@@ -74,13 +74,7 @@ Buka browser di `http://localhost:3000`.
 
 ## 🚢 Panduan Deploy ke Production (Vercel)
 
-1. Buat repository baru di GitHub dan push folder ini:
-   ```bash
-   git add .
-   git commit -m "feat: initial production-ready siberliterasi AI"
-   git remote add origin https://github.com/username/sentimen-judol-analyzer.git
-   git push -u origin main
-   ```
-2. Buka [vercel.com](https://vercel.com) ➔ Klik **Add New Project** ➔ Pilih repository GitHub Anda.
-3. Di bagian **Environment Variables**, masukkan 5 variabel dari `.env.local`.
-4. Klik **Deploy**! Web siap diakses publik dengan SSL HTTPS gratis.
+1. Repository sudah terhubung ke GitHub: `https://github.com/wildanmkhdev/Suara-Netizen`
+2. Buka [vercel.com](https://vercel.com) ➔ Klik **Add New Project** ➔ Pilih repository **Suara-Netizen**.
+3. Di bagian **Environment Variables**, masukkan variabel dari `.env.local`.
+4. Klik **Deploy**! Web langsung live di domain `.vercel.app` bersertifikat SSL HTTPS gratis.

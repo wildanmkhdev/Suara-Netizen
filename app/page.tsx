@@ -127,10 +127,10 @@ export default function Home() {
             </div>
             <div>
               <h1 className="font-extrabold text-sm sm:text-base tracking-tight flex items-center gap-1.5">
-                SiberLiterasi <span className="text-primary font-mono text-xs px-1.5 py-0.5 rounded bg-primary/10">AI</span>
+                Suara-Netizen <span className="text-primary font-mono text-xs px-1.5 py-0.5 rounded bg-primary/10">AI</span>
               </h1>
               <p className="text-[10px] text-muted-foreground hidden sm:block">
-                Sentimen Analisis & Deteksi Kontaminasi Bot Judol
+                Radar Sentimen Publik & Deteksi Bot Manipulasi Digital
               </p>
             </div>
           </div>
@@ -359,7 +359,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-border/40 py-6 text-center text-xs text-muted-foreground">
-        <p>Inisiatif Literasi Keuangan & Perlindungan Ruang Siber Indonesia • 100% Free Open Architecture</p>
+        <p>Suara-Netizen AI • Inisiatif Literasi Digital & Perlindungan Ruang Publik Indonesia • 100% Free Production Stack</p>
       </footer>
     </div>
   );
