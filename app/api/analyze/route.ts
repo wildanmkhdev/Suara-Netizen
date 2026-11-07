@@ -150,8 +150,15 @@ export async function POST(req: Request) {
       Math.round((judolCount / Math.max(1, comments.length)) * 100)
     );
 
-    // 5. Analisis Cerdas via Groq API (Llama-3.3-70B - GRATIS) jika ada Key
+    // 5. Analisis Cerdas via Grok (xAI) atau Groq API
+    const grokApiKey = process.env.GROK_API_KEY;
     const groqApiKey = process.env.GROQ_API_KEY;
+    const aiApiKey = grokApiKey || groqApiKey;
+    const aiEndpoint = grokApiKey
+      ? 'https://api.x.ai/v1/chat/completions'
+      : 'https://api.groq.com/openai/v1/chat/completions';
+    const aiModel = grokApiKey ? 'grok-2-mini' : 'llama-3.3-70b-versatile';
+
     let sentimentDistribution = {
       positif: 40,
       netral: 30,
@@ -160,7 +167,7 @@ export async function POST(req: Request) {
     let executiveSummary = `Konten ini memiliki tingkat kontaminasi spam/bot judol sebesar ${heuristicRiskScore}%. Terdeteksi pola manipulasi komentar promosi slot dengan iming-iming 'gacor' dan 'maxwin'. Diperlukan peningkatan literasi kritis publik agar tidak mudah tergiur tawaran tautan di bio profil atau nomor WhatsApp mencurigakan.`;
     let aiJudolRiskScore = heuristicRiskScore;
 
-    if (groqApiKey) {
+    if (aiApiKey) {
       try {
         const groqPrompt = `Anda adalah AI Analis Literasi Siber & Kejahatan Finansial Digital Indonesia.
 Analisis kumpulan komentar media sosial berikut.
@@ -176,14 +183,14 @@ KEMBALIKAN HANYA JSON DENGAN STRUKTUR BERIKUT:
   "executive_summary": "Ringkasan edukasi literasi..."
 }`;
 
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const groqRes = await fetch(aiEndpoint, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${groqApiKey}`,
+            Authorization: `Bearer ${aiApiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: aiModel,
             response_format: { type: 'json_object' },
             messages: [
               { role: 'system', content: groqPrompt },
