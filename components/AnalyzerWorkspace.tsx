@@ -5,7 +5,8 @@ import type { FormEvent } from 'react';
 import { ArrowUpRight, ChevronRight, LoaderCircle } from 'lucide-react';
 import { JudolThreatGauge } from '@/components/JudolThreatGauge';
 import { BuzzerDetectionCard } from '@/components/BuzzerDetectionCard';
-import { SentimentChart } from '@/components/SentimentChart';
+import { SentimentPieChart } from '@/components/SentimentPieChart';
+import { SentimentBarChart } from '@/components/SentimentBarChart';
 import { SentimentWordCloud } from '@/components/SentimentWordCloud';
 import { LiteracySummaryCard } from '@/components/LiteracySummaryCard';
 import { CommentsTable } from '@/components/CommentsTable';
@@ -214,15 +215,53 @@ export function AnalyzerWorkspace() {
                     ? 'Indikasi buzzer & astroturfing terkoordinasi'
                     : 'Apresiasi, diskusi wajar, dan kritik warganet'}
               </p>
-              <div className={styles.miniBar} aria-hidden="true">
-                <span className={styles.positiveBar} style={{ width: `${preview.sentiment_distribution.positif}%` }} />
-                <span className={styles.neutralBar} style={{ width: `${preview.sentiment_distribution.netral}%` }} />
-                <span className={styles.negativeBar} style={{ width: `${preview.sentiment_distribution.negatif}%` }} />
-              </div>
-              <div className={styles.miniLegend}>
-                <span>Positif {preview.sentiment_distribution.positif}%</span>
-                <span>Netral {preview.sentiment_distribution.netral}%</span>
-                <span>Negatif {preview.sentiment_distribution.negatif}%</span>
+              {/* Mini Pie Chart & Bar Chart Preview */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '14px 0' }}>
+                <svg viewBox="0 0 100 100" style={{ width: '56px', height: '56px', transform: 'rotate(-90deg)', flexShrink: 0 }} aria-hidden="true">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="var(--sn-surface)" strokeWidth="18" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#237454"
+                    strokeWidth="18"
+                    strokeDasharray={`${(preview.sentiment_distribution.positif / 100) * 251.3} 251.3`}
+                    strokeDashoffset="0"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#b9bdb8"
+                    strokeWidth="18"
+                    strokeDasharray={`${(preview.sentiment_distribution.netral / 100) * 251.3} 251.3`}
+                    strokeDashoffset={`${-((preview.sentiment_distribution.positif / 100) * 251.3)}`}
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#af4338"
+                    strokeWidth="18"
+                    strokeDasharray={`${(preview.sentiment_distribution.negatif / 100) * 251.3} 251.3`}
+                    strokeDashoffset={`${-(((preview.sentiment_distribution.positif + preview.sentiment_distribution.netral) / 100) * 251.3)}`}
+                  />
+                </svg>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div className={styles.miniBar} aria-hidden="true" style={{ margin: 0, height: '10px' }}>
+                    <span className={styles.positiveBar} style={{ width: `${preview.sentiment_distribution.positif}%` }} />
+                    <span className={styles.neutralBar} style={{ width: `${preview.sentiment_distribution.netral}%` }} />
+                    <span className={styles.negativeBar} style={{ width: `${preview.sentiment_distribution.negatif}%` }} />
+                  </div>
+                  <div className={styles.miniLegend} style={{ marginTop: '2px' }}>
+                    <span>Positif {preview.sentiment_distribution.positif}%</span>
+                    <span>Netral {preview.sentiment_distribution.netral}%</span>
+                    <span>Negatif {preview.sentiment_distribution.negatif}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -273,8 +312,18 @@ export function AnalyzerWorkspace() {
           ) : null}
 
           {/* Grid Visualisasi Sentimen, Risiko Judol, dan Buzzer */}
-          <div className={styles.reportMetrics} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            <SentimentChart distribution={view.data.sentiment_distribution} />
+          {/* Visualisasi Grafik Sentimen: Pie Chart & Bar Chart */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginTop: '20px' }}>
+            <SentimentPieChart distribution={view.data.sentiment_distribution} />
+            <SentimentBarChart
+              distribution={view.data.sentiment_distribution}
+              buzzerStats={view.data.buzzer_stats}
+              judolScore={view.data.judol_risk_score}
+            />
+          </div>
+
+          {/* Kartu Indikasi Promosi Judol & Buzzer Bayaran */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginTop: '20px' }}>
             <JudolThreatGauge score={view.data.judol_risk_score} />
             <BuzzerDetectionCard stats={view.data.buzzer_stats} />
           </div>

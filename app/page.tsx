@@ -47,23 +47,65 @@ export default function Home() {
           <div className={styles.featureContent}>
             <article className={styles.featureRow}>
               <div className={styles.featureCopy}>
-                <h3>Sentimen percakapan</h3>
-                <p>Lihat perkiraan porsi tanggapan positif, netral, dan negatif pada komentar yang diperiksa. Sebuah kritik bukan berarti spam.</p>
+                <h3>Visualisasi Sentimen (Pie & Bar Chart)</h3>
+                <p>Lihat perkiraan porsi sentimen positif, netral, dan negatif lewat diagram lingkaran (Pie Chart) dan grafik batang (Bar Chart) yang presisi.</p>
               </div>
               <figure className={styles.featureFigure}>
-                <div className={styles.sentimentPreview} data-ui>
-                  <span>Perkiraan sentimen</span>
-                  <div className={styles.sentimentBars}>
-                    {(['positif', 'netral', 'negatif'] as const).map((label) => (
-                      <div className={styles.sentimentRow} key={label}>
-                        <span>{label}</span>
-                        <div className={styles.barTrack}><i className={styles[label]} style={{ width: `${sample.sentiment_distribution[label]}%` }} /></div>
-                        <strong>{sample.sentiment_distribution[label]}%</strong>
-                      </div>
-                    ))}
+                <div className={styles.sentimentPreview} data-ui style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Diagram Lingkaran & Batang</span>
+                    <span style={{ fontSize: '12px', color: 'var(--sn-muted)' }}>Sampel 1.000 komentar</span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                    <svg viewBox="0 0 100 100" style={{ width: '84px', height: '84px', transform: 'rotate(-90deg)', flexShrink: 0 }} aria-hidden="true">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="var(--sn-surface)" strokeWidth="18" />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke="#237454"
+                        strokeWidth="18"
+                        strokeDasharray={`${(sample.sentiment_distribution.positif / 100) * 251.3} 251.3`}
+                        strokeDashoffset="0"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke="#b9bdb8"
+                        strokeWidth="18"
+                        strokeDasharray={`${(sample.sentiment_distribution.netral / 100) * 251.3} 251.3`}
+                        strokeDashoffset={`${-((sample.sentiment_distribution.positif / 100) * 251.3)}`}
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke="#af4338"
+                        strokeWidth="18"
+                        strokeDasharray={`${(sample.sentiment_distribution.negatif / 100) * 251.3} 251.3`}
+                        strokeDashoffset={`${-(((sample.sentiment_distribution.positif + sample.sentiment_distribution.netral) / 100) * 251.3)}`}
+                      />
+                    </svg>
+
+                    <div className={styles.sentimentBars} style={{ flex: 1, minWidth: '180px' }}>
+                      {(['positif', 'netral', 'negatif'] as const).map((label) => (
+                        <div className={styles.sentimentRow} key={label}>
+                          <span>{label}</span>
+                          <div className={styles.barTrack}>
+                            <i className={styles[label]} style={{ width: `${sample.sentiment_distribution[label]}%` }} />
+                          </div>
+                          <strong>{sample.sentiment_distribution[label]}%</strong>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <figcaption>Contoh dari {sample.total_comments_scanned} komentar ilustratif.</figcaption>
+                <figcaption>Diagram lingkaran (Pie) dan grafik batang (Bar) dari {sample.total_comments_scanned.toLocaleString('id-ID')} komentar ilustratif.</figcaption>
               </figure>
             </article>
 
