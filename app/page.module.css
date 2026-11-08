@@ -38,6 +38,16 @@
 .wordsPreview { display: flex; align-items: center; justify-content: center; min-height: 15rem; }
 .wordPlot { display: block; width: 100%; overflow: visible; }
 .wordPlot text { fill: var(--sn-ink); font-family: var(--sn-font); }
+.animatedWord {
+  opacity: 0;
+  animation: wordPopIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-box: fill-box;
+  transition: transform 0.2s ease, fill 0.2s ease;
+}
+.animatedWord:hover {
+  transform: scale(1.18);
+  cursor: default;
+}
 .promotionPreview p, .contextPreview p { font-size: var(--sn-lead); line-height: 1.5; }
 .keywordTags { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.2rem; }
 .keywordTags span { padding: 0.2rem 0.5rem; color: var(--sn-promotion); background: var(--sn-promotion-soft); border-radius: 4px; font-size: var(--sn-small); }

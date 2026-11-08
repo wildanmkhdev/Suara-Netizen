@@ -290,8 +290,20 @@ function WordCloudPlot({ words, label, compact = false, downloadable = false }: 
             <desc id={descriptionId}>
               {status} Ukuran kata mengikuti frekuensi. Jumlah dan kategori setiap kata tersedia pada tabel frekuensi lengkap di bawah.
             </desc>
-            {layout.words.map((word) => (
-              <text key={word.id} x={word.x} y={word.y} fontSize={word.size} fontWeight={700} fill={categoryColor(word.category)}>
+            {layout.words.map((word, idx) => (
+              <text
+                key={word.id}
+                x={word.x}
+                y={word.y}
+                fontSize={word.size}
+                fontWeight={700}
+                fill={categoryColor(word.category)}
+                className={styles.wordItem}
+                style={{
+                  animationDelay: `${Math.min(idx * 35, 1200)}ms`,
+                  transformOrigin: `${word.x}px ${word.y}px`,
+                }}
+              >
                 {word.text}
                 <title>{`${word.text}: ${countFormatter.format(word.value)} kali, ${CATEGORY_DETAILS[word.category].label}`}</title>
               </text>

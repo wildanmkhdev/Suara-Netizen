@@ -3,13 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { ArrowUpRight, ChevronRight, LoaderCircle } from 'lucide-react';
-import { JudolThreatGauge } from '@/components/JudolThreatGauge';
-import { BuzzerDetectionCard } from '@/components/BuzzerDetectionCard';
-import { SentimentPieChart } from '@/components/SentimentPieChart';
-import { SentimentBarChart } from '@/components/SentimentBarChart';
+import { AnalysisDashboard } from '@/components/AnalysisDashboard';
 import { SentimentWordCloud } from '@/components/SentimentWordCloud';
 import { LiteracySummaryCard } from '@/components/LiteracySummaryCard';
 import { CommentsTable } from '@/components/CommentsTable';
+import { ScrollReveal } from '@/components/ScrollReveal';
 import { parseAnalysisResponse, responseError } from '@/lib/analysis-types';
 import type { AnalysisResult, ExampleKind } from '@/lib/analysis-types';
 import { REPORT_EXAMPLES } from '@/lib/report-examples';
@@ -311,37 +309,36 @@ export function AnalyzerWorkspace() {
             </a>
           ) : null}
 
-          {/* Grid Visualisasi Sentimen, Risiko Judol, dan Buzzer */}
-          {/* Visualisasi Grafik Sentimen: Pie Chart & Bar Chart */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginTop: '20px' }}>
-            <SentimentPieChart distribution={view.data.sentiment_distribution} />
-            <SentimentBarChart
+          {/* Dashboard Intelijen Percakapan: 4 KPI + Pie Entitas + Bar Sentimen + Pita Niat */}
+          <ScrollReveal>
+            <AnalysisDashboard
               distribution={view.data.sentiment_distribution}
               buzzerStats={view.data.buzzer_stats}
               judolScore={view.data.judol_risk_score}
+              totalCommentsScanned={view.data.total_comments_scanned}
             />
-          </div>
-
-          {/* Kartu Indikasi Promosi Judol & Buzzer Bayaran */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginTop: '20px' }}>
-            <JudolThreatGauge score={view.data.judol_risk_score} />
-            <BuzzerDetectionCard stats={view.data.buzzer_stats} />
-          </div>
+          </ScrollReveal>
 
           {/* Ringkasan Eksekutif, Analisis Opini, dan Solusi Tindakan */}
-          <LiteracySummaryCard
-            summary={view.data.executive_summary}
-            judolScore={view.data.judol_risk_score}
-            keywords={view.data.judol_keywords_found}
-            structured={view.data.executive_summary_structured}
-            sampleNote={view.data.sample_note}
-          />
+          <ScrollReveal delayMs={100}>
+            <LiteracySummaryCard
+              summary={view.data.executive_summary}
+              judolScore={view.data.judol_risk_score}
+              keywords={view.data.judol_keywords_found}
+              structured={view.data.executive_summary_structured}
+              sampleNote={view.data.sample_note}
+            />
+          </ScrollReveal>
 
-          {/* Word Cloud Topik */}
-          <SentimentWordCloud words={view.data.word_frequencies} />
+          {/* Word Cloud Topik dengan Animasi Pop-in Kata */}
+          <ScrollReveal delayMs={150}>
+            <SentimentWordCloud words={view.data.word_frequencies} />
+          </ScrollReveal>
 
           {/* Tabel Sampel Komentar Terklasifikasi */}
-          <CommentsTable comments={view.data.comments_sample ?? []} />
+          <ScrollReveal delayMs={200}>
+            <CommentsTable comments={view.data.comments_sample ?? []} />
+          </ScrollReveal>
         </section>
       ) : null}
     </>

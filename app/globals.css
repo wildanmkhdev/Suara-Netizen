@@ -80,6 +80,36 @@ img, svg { max-width: 100%; }
 :focus-visible { outline: 2px solid var(--sn-ink); outline-offset: 4px; }
 * { scrollbar-width: thin; scrollbar-color: var(--sn-control) var(--sn-paper); }
 
+/* Smooth Scroll Reveal Animations */
+.revealPending {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.revealed {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Word Cloud Pop-in Keyframes */
+@keyframes wordPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) translateY(12px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.1) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {

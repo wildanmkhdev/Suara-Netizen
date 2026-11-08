@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { AnalyzerWorkspace } from '@/components/AnalyzerWorkspace';
 import { MobileNav } from '@/components/MobileNav';
+import { ScrollReveal } from '@/components/ScrollReveal';
 import { REPORT_EXAMPLES } from '@/lib/report-examples';
 import styles from './page.module.css';
 
@@ -119,7 +120,24 @@ export default function Home() {
                   <svg viewBox="0 0 600 220" className={styles.wordPlot} role="img" aria-label="Contoh word cloud dari percakapan ilustratif">
                     {topWords.map((word, index) => {
                       const [x, y] = wordPreviewPositions[index];
-                      return <text key={word.text} x={x} y={y} textAnchor="middle" aria-label={`${word.text}: ${word.value} kali`} fontSize={Math.min(40, 28 + word.value * 2)} fontWeight={500}>{word.text}</text>;
+                      return (
+                        <text
+                          key={word.text}
+                          x={x}
+                          y={y}
+                          textAnchor="middle"
+                          aria-label={`${word.text}: ${word.value} kali`}
+                          fontSize={Math.min(40, 28 + word.value * 2)}
+                          fontWeight={600}
+                          className={styles.animatedWord}
+                          style={{
+                            animationDelay: `${index * 80}ms`,
+                            transformOrigin: `${x}px ${y}px`,
+                          }}
+                        >
+                          {word.text}
+                        </text>
+                      );
                     })}
                   </svg>
                 </div>
@@ -160,40 +178,46 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="edukasi" className={styles.literacy} aria-labelledby="literacy-title">
-          <figure className={styles.literacyPhoto}>
-            <Image src="/images/literasi-digital.webp" width={1280} height={854} unoptimized loading="lazy" alt="Tangan memegang telepon untuk membaca informasi digital" />
-          </figure>
-          <div className={styles.literacyCopy}>
-            <h2 id="literacy-title">Baca kritis.<br />Jaga nalar.</h2>
-            <p>Ramainya komentar tidak otomatis membuat sebuah informasi benar. Promosi bisa terdengar positif; kritik bisa datang dari pembaca yang peduli.</p>
-            <ul>
-              <li>Periksa sumber sebelum membagikan sebuah klaim.</li>
-              <li>Tinjau ajakan membuka tautan atau memberi data pribadi.</li>
-              <li>Baca konteks, bukan hanya kata yang ditandai.</li>
-            </ul>
-            <a href="#pindai" className={styles.textAction}>Mulai dengan satu video</a>
-          </div>
-        </section>
+        <ScrollReveal>
+          <section id="edukasi" className={styles.literacy} aria-labelledby="literacy-title">
+            <figure className={styles.literacyPhoto}>
+              <Image src="/images/literasi-digital.webp" width={1280} height={854} unoptimized loading="lazy" alt="Tangan memegang telepon untuk membaca informasi digital" />
+            </figure>
+            <div className={styles.literacyCopy}>
+              <h2 id="literacy-title">Baca kritis.<br />Jaga nalar.</h2>
+              <p>Ramainya komentar tidak otomatis membuat sebuah informasi benar. Promosi bisa terdengar positif; kritik bisa datang dari pembaca yang peduli.</p>
+              <ul>
+                <li>Periksa sumber sebelum membagikan sebuah klaim.</li>
+                <li>Tinjau ajakan membuka tautan atau memberi data pribadi.</li>
+                <li>Baca konteks, bukan hanya kata yang ditandai.</li>
+              </ul>
+              <a href="#pindai" className={styles.textAction}>Mulai analisis</a>
+            </div>
+          </section>
+        </ScrollReveal>
 
-        <section id="cara-kerja" className={styles.howTo} aria-labelledby="how-title">
-          <h2 id="how-title">Mulai dari<br />satu tautan.</h2>
-          <ol>
-            <li><h3>Salin tautan video atau postingan</h3><p>Gunakan tombol Bagikan di YouTube atau salin tautan postingan dari X (Twitter). Konten harus dapat diakses publik.</p></li>
-            <li><h3>Jalankan analisis</h3><p>Tempel tautan pada kolom di atas. Laporan disusun dari sampel hingga 1.000 komentar yang berhasil diperiksa.</p></li>
-            <li><h3>Baca dan bandingkan</h3><p>Lihat visualisasi sentimen, deteksi buzzer, kata yang menonjol, dan indikasi judol. Buka sampel komentar untuk memahami konteksnya.</p></li>
-          </ol>
-        </section>
+        <ScrollReveal delayMs={100}>
+          <section id="cara-kerja" className={styles.howTo} aria-labelledby="how-title">
+            <h2 id="how-title">Mulai dari<br />satu tautan.</h2>
+            <ol>
+              <li><h3>Salin tautan video atau postingan</h3><p>Gunakan tombol Bagikan di YouTube atau salin tautan postingan dari X (Twitter). Konten harus dapat diakses publik.</p></li>
+              <li><h3>Jalankan analisis</h3><p>Tempel tautan pada kolom di atas. Laporan disusun dari sampel hingga 1.000 komentar yang berhasil diperiksa.</p></li>
+              <li><h3>Baca dan bandingkan</h3><p>Lihat visualisasi sentimen, deteksi buzzer, kata yang menonjol, dan indikasi judol. Buka sampel komentar untuk memahami konteksnya.</p></li>
+            </ol>
+          </section>
+        </ScrollReveal>
 
-        <section id="bantuan" className={styles.faq} aria-labelledby="faq-title">
-          <h2 id="faq-title">Hal yang perlu<br />diketahui.</h2>
-          <dl>
-            <div><dt>Platform apa yang didukung?</dt><dd>Analisis tautan mendukung video YouTube (termasuk Shorts) serta postingan dan utas X (Twitter). Sistem mengambil sampel hingga 1.000 komentar publik.</dd></div>
-            <div><dt>Apakah hasilnya pasti benar?</dt><dd>Hasil bersifat indikatif berbasis algoritma heuristik dan AI untuk membantu membaca pola warganet, bukan sebagai vonis hukum terhadap akun tertentu.</dd></div>
-            <div><dt>Perlu masuk akun?</dt><dd>Tidak perlu masuk akun untuk menggunakan kolom analisis. Cukup masukkan tautan video publik, tanpa menyertakan informasi pribadi.</dd></div>
-            <div><dt>Bisa mengunduh hasil?</dt><dd>Gambar word cloud dapat diunduh sebagai PNG dari laporan. Grafik frekuensi membantu membaca angka di balik kata yang ditampilkan.</dd></div>
-          </dl>
-        </section>
+        <ScrollReveal delayMs={150}>
+          <section id="bantuan" className={styles.faq} aria-labelledby="faq-title">
+            <h2 id="faq-title">Hal yang perlu<br />diketahui.</h2>
+            <dl>
+              <div><dt>Platform apa yang didukung?</dt><dd>Analisis tautan mendukung video YouTube (termasuk Shorts) serta postingan dan utas X (Twitter). Sistem mengambil sampel hingga 1.000 komentar publik.</dd></div>
+              <div><dt>Apakah hasilnya pasti benar?</dt><dd>Hasil bersifat indikatif berbasis algoritma heuristik dan AI untuk membantu membaca pola warganet, bukan sebagai vonis hukum terhadap akun tertentu.</dd></div>
+              <div><dt>Perlu masuk akun?</dt><dd>Tidak perlu masuk akun untuk menggunakan kolom analisis. Cukup masukkan tautan video publik, tanpa menyertakan informasi pribadi.</dd></div>
+              <div><dt>Bisa mengunduh hasil?</dt><dd>Gambar word cloud dapat diunduh sebagai PNG dari laporan. Grafik frekuensi membantu membaca angka di balik kata yang ditampilkan.</dd></div>
+            </dl>
+          </section>
+        </ScrollReveal>
       </main>
 
       <footer className={styles.footer}>

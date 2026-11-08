@@ -46,8 +46,21 @@ export function CommentsTable({ comments }: CommentsTableProps) {
           : 'Tidak ada komentar organik lainnya dalam sampel ini.';
 
   return (
-    <section className={styles.panel} aria-label="Sampel komentar" data-ui>
-      <h3 className={styles.title}>Sampel komentar</h3>
+    <section
+      style={{
+        boxSizing: 'border-box',
+        width: '100%',
+        marginTop: '28px',
+        padding: 'clamp(1.25rem, 2.5vw, 2rem)',
+        background: 'var(--sn-paper)',
+        border: '1px solid var(--sn-line)',
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px -2px rgba(0, 0, 0, 0.05)',
+      }}
+      aria-label="Sampel komentar"
+      data-ui
+    >
+      <h3 className={styles.title}>Sampel komentar terperiksa</h3>
       <div className={styles.filters} role="group" aria-label="Filter komentar">
         {filters.map((option) => (
           <button
