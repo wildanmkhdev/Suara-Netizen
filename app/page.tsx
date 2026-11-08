@@ -126,9 +126,10 @@ export default function Home() {
                           x={x}
                           y={y}
                           textAnchor="middle"
+                          fill={word.category === 'positif' ? '#16a34a' : word.category === 'negatif' ? '#dc2626' : '#0f172a'}
                           aria-label={`${word.text}: ${word.value} kali`}
-                          fontSize={Math.min(40, 28 + word.value * 2)}
-                          fontWeight={600}
+                          fontSize={Math.min(42, 26 + word.value * 3)}
+                          fontWeight={700}
                           className={styles.animatedWord}
                           style={{
                             animationDelay: `${index * 80}ms`,
