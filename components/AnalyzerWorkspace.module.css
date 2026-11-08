@@ -1,12 +1,13 @@
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-areas: 'copy artwork';
   align-items: center;
   gap: clamp(2.5rem, 5vw, 5.5rem);
   padding: 4.5rem var(--sn-page-pad) 6rem;
 }
-.heroCopy { min-width: 0; }
-.heroArtwork { min-width: 0; align-self: center; }
+.heroCopy { grid-area: copy; min-width: 0; }
+.heroArtwork { grid-area: artwork; min-width: 0; align-self: center; }
 .heroCopy h1 {
   font-size: var(--sn-display);
   font-weight: 600;
@@ -106,16 +107,15 @@
 }
 @media (max-width: 760px) {
   .hero {
-    grid-template-columns: minmax(0, 1fr) minmax(100px, 34%);
-    grid-template-areas: 'title artwork' 'intro intro' 'form form';
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'artwork' 'title' 'intro' 'form';
     padding-top: 2.5rem;
     padding-bottom: 4rem;
     column-gap: 1rem;
     row-gap: 1.25rem;
   }
   .heroCopy { display: contents; }
-  .heroCopy h1 { grid-area: title; font-size: clamp(1.9rem, 8.2vw, 3.2rem); }
-  .heroArtwork { grid-area: artwork; }
+  .heroCopy h1 { grid-area: title; font-size: clamp(2.65rem, 11vw, 4.8rem); }
   .hero noscript { grid-column: 1 / -1; }
   .intro { grid-area: intro; margin-top: 0; font-size: 1.125rem; max-width: 40ch; }
   .formArea { grid-area: form; margin-top: 0.25rem; max-width: none; }

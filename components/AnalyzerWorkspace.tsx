@@ -136,6 +136,9 @@ export function AnalyzerWorkspace() {
   return (
     <>
       <section className={styles.hero} aria-labelledby="landing-title">
+        <ScrollReveal className={styles.heroArtwork} delayMs={100}>
+          <StopHoaksBanner />
+        </ScrollReveal>
         <div className={styles.heroCopy}>
           <h1 id="landing-title">Pahami suara<br />warganet.</h1>
           <p className={styles.intro}>
@@ -192,9 +195,6 @@ export function AnalyzerWorkspace() {
           <noscript><p className={styles.help}>Aktifkan JavaScript untuk menjalankan analisis. Informasi fitur tetap dapat dibaca di halaman ini.</p></noscript>
         </div>
 
-        <ScrollReveal className={styles.heroArtwork} delayMs={100}>
-          <StopHoaksBanner />
-        </ScrollReveal>
       </section>
 
       {view ? (

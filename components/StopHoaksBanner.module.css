@@ -48,8 +48,18 @@
 }
 
 @media (max-width: 760px) {
+  .poster {
+    width: 100%;
+    height: 85vh;
+    height: 85svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
   .artwork {
-    max-width: 390px;
+    max-width: min(100%, calc((85vh - 3rem) * 0.875));
+    max-width: min(100%, calc((85svh - 3rem) * 0.875));
   }
 
 }

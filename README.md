@@ -4,7 +4,7 @@ Layanan untuk membaca sentimen, frekuensi kata, dan indikasi pola promosi atau p
 
 ## Antarmuka
 
-- Landing page hitam-putih dengan tipografi Bricolage Grotesque dan ilustrasi telapak lima jari **STOP HOAKS**.
+- Landing page hitam-putih dengan tipografi Bricolage Grotesque dan ilustrasi telapak lima jari **STOP HOAKS**. Pada HP, banner tampil pertama dalam blok setinggi 85vh (85svh pada browser yang mendukung), lalu judul, penjelasan, dan formulir dalam satu kolom. Gambar tetap proporsional; desktop mempertahankan susunan dua kolom.
 - Input video YouTube/Shorts dan postingan X publik, dengan validasi tautan, status proses, dan pesan kesalahan.
 - Tiga contoh ilustratif: percakapan biasa, indikasi promosi judol, dan utas X. Contoh tidak dikirim ke layanan eksternal atau disimpan sebagai pemindaian.
 - Dashboard menampilkan pie penanda teks, batang sentimen pemindaian, dan pita kategori tautan secara bersamaan. Hover/fokus memperlihatkan rincian; klik atau Enter/Space menyaring komentar teratas tanpa menyembunyikan grafik lain. Setiap grafik menyebutkan basis datanya: seluruh pemindaian atau cuplikan komentar.
