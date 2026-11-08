@@ -1,45 +1,49 @@
 'use client';
 
 import { useState } from 'react';
+import type { ClassifiedComment } from '@/lib/analysis-types';
 import styles from './Report.module.css';
-
-interface ClassifiedComment {
-  text: string;
-  isJudol: boolean;
-  keywords: string[];
-}
 
 interface CommentsTableProps {
   comments: ClassifiedComment[];
 }
 
-type CommentFilter = 'all' | 'suspected' | 'other';
+type CommentFilter = 'all' | 'judol' | 'buzzer' | 'organic';
 
 const countFormatter = new Intl.NumberFormat('id-ID');
 
 export function CommentsTable({ comments }: CommentsTableProps) {
   const [filter, setFilter] = useState<CommentFilter>('all');
   const availableComments = comments ?? [];
-  const suspectedCount = availableComments.reduce(
-    (count, comment) => count + (comment.isJudol ? 1 : 0),
-    0,
-  );
-  const otherCount = availableComments.length - suspectedCount;
+
+  const judolCount = availableComments.reduce((sum, c) => sum + (c.isJudol ? 1 : 0), 0);
+  const buzzerCount = availableComments.reduce((sum, c) => sum + (c.isBuzzer ? 1 : 0), 0);
+  const organicCount = availableComments.reduce((sum, c) => sum + (!c.isJudol && !c.isBuzzer ? 1 : 0), 0);
+
   const filters: { value: CommentFilter; label: string; count: number }[] = [
     { value: 'all', label: 'Semua', count: availableComments.length },
-    { value: 'suspected', label: 'Indikasi promosi', count: suspectedCount },
-    { value: 'other', label: 'Lainnya', count: otherCount },
+    { value: 'judol', label: 'Spam judol', count: judolCount },
+    { value: 'buzzer', label: 'Indikasi buzzer', count: buzzerCount },
+    { value: 'organic', label: 'Organik', count: organicCount },
   ];
-  const visibleCount = filter === 'all'
-    ? availableComments.length
-    : filter === 'suspected'
-      ? suspectedCount
-      : otherCount;
-  const emptyMessage = availableComments.length === 0
-    ? 'Belum ada komentar untuk ditampilkan.'
-    : filter === 'suspected'
-      ? 'Tidak ada komentar dengan indikasi promosi dalam sampel ini.'
-      : 'Tidak ada komentar lainnya dalam sampel ini.';
+
+  const visibleCount =
+    filter === 'all'
+      ? availableComments.length
+      : filter === 'judol'
+        ? judolCount
+        : filter === 'buzzer'
+          ? buzzerCount
+          : organicCount;
+
+  const emptyMessage =
+    availableComments.length === 0
+      ? 'Belum ada komentar untuk ditampilkan.'
+      : filter === 'judol'
+        ? 'Tidak ada komentar dengan indikasi promosi judol dalam sampel ini.'
+        : filter === 'buzzer'
+          ? 'Tidak ada komentar dengan indikasi template buzzer dalam sampel ini.'
+          : 'Tidak ada komentar organik lainnya dalam sampel ini.';
 
   return (
     <section className={styles.panel} aria-label="Sampel komentar" data-ui>
@@ -61,7 +65,7 @@ export function CommentsTable({ comments }: CommentsTableProps) {
 
       <p className={styles.resultCount} role="status">
         Menampilkan {countFormatter.format(visibleCount)} dari{' '}
-        {countFormatter.format(availableComments.length)} komentar sampel.
+        {countFormatter.format(availableComments.length)} komentar sampel (dari total pemindaian hingga 1.000 komentar).
       </p>
 
       {visibleCount === 0 ? (
@@ -69,21 +73,39 @@ export function CommentsTable({ comments }: CommentsTableProps) {
       ) : (
         <ol className={styles.commentList} role="list">
           {availableComments.map((item, index) => {
-            if (filter === 'suspected' && !item.isJudol) return null;
-            if (filter === 'other' && item.isJudol) return null;
+            if (filter === 'judol' && !item.isJudol) return null;
+            if (filter === 'buzzer' && !item.isBuzzer) return null;
+            if (filter === 'organic' && (item.isJudol || item.isBuzzer)) return null;
 
             return (
               <li key={index} className={styles.commentRow}>
                 <div className={styles.commentMeta}>
-                  <span className={styles.commentNumber}>Komentar {index + 1}</span>
-                  <span className={item.isJudol ? styles.promotionLabel : styles.otherLabel}>
-                    {item.isJudol ? 'Indikasi promosi' : 'Lainnya'}
-                  </span>
+                  <span className={styles.commentNumber}>Komentar #{index + 1}</span>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {item.isJudol && (
+                      <span className={styles.promotionLabel}>Spam Judol</span>
+                    )}
+                    {item.isBuzzer && (
+                      <span className={styles.buzzerBadge}>Buzzer / Template</span>
+                    )}
+                    {!item.isJudol && !item.isBuzzer && (
+                      <span className={styles.otherLabel}>Organik</span>
+                    )}
+                  </div>
                 </div>
+
                 <p className={styles.commentText} dir="auto">{item.text}</p>
+
+                {item.buzzerReason && (
+                  <p className={styles.commentKeywords} style={{ color: '#c25e00' }}>
+                    <span>Catatan: </span>
+                    <span>{item.buzzerReason}</span>
+                  </p>
+                )}
+
                 {item.keywords && item.keywords.length > 0 && (
                   <p className={styles.commentKeywords}>
-                    <span>Kata yang ditandai: </span>
+                    <span>Kata kunci judol: </span>
                     <span className={styles.keywordValues}>{item.keywords.join(', ')}</span>
                   </p>
                 )}
@@ -94,8 +116,7 @@ export function CommentsTable({ comments }: CommentsTableProps) {
       )}
 
       <p className={styles.commentNote}>
-        Penandaan berlaku pada isi komentar, bukan pemilik akun. Tautan dalam
-        komentar ditampilkan sebagai teks.
+        Penandaan berlaku pada analisis teks komentar sampel, bukan identitas pemilik akun resmi.
       </p>
     </section>
   );

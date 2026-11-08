@@ -137,17 +137,17 @@ export default function Home() {
         <section id="cara-kerja" className={styles.howTo} aria-labelledby="how-title">
           <h2 id="how-title">Mulai dari<br />satu tautan.</h2>
           <ol>
-            <li><h3>Salin tautan video</h3><p>Gunakan tombol Bagikan di YouTube. Video harus dapat diakses publik dan memiliki komentar.</p></li>
-            <li><h3>Jalankan analisis</h3><p>Tempel tautan pada kolom di atas. Laporan disusun dari komentar yang berhasil diperiksa.</p></li>
-            <li><h3>Baca dan bandingkan</h3><p>Lihat sentimen, kata yang menonjol, dan indikasi promosi. Buka sampel komentar untuk memahami konteksnya.</p></li>
+            <li><h3>Salin tautan video atau postingan</h3><p>Gunakan tombol Bagikan di YouTube atau salin tautan postingan dari X (Twitter). Konten harus dapat diakses publik.</p></li>
+            <li><h3>Jalankan analisis</h3><p>Tempel tautan pada kolom di atas. Laporan disusun dari sampel hingga 1.000 komentar yang berhasil diperiksa.</p></li>
+            <li><h3>Baca dan bandingkan</h3><p>Lihat visualisasi sentimen, deteksi buzzer, kata yang menonjol, dan indikasi judol. Buka sampel komentar untuk memahami konteksnya.</p></li>
           </ol>
         </section>
 
         <section id="bantuan" className={styles.faq} aria-labelledby="faq-title">
           <h2 id="faq-title">Hal yang perlu<br />diketahui.</h2>
           <dl>
-            <div><dt>Platform apa yang didukung?</dt><dd>Saat ini analisis tautan mendukung video YouTube dan YouTube Shorts. Postingan dari platform lain belum dapat dianalisis.</dd></div>
-            <div><dt>Apakah hasilnya pasti benar?</dt><dd>Tidak. Hasil bersifat indikatif dan hanya mewakili komentar yang diperiksa. Gunakan laporan untuk membantu membaca, bukan sebagai bukti akun bot, buzzer, atau pelaku judi.</dd></div>
+            <div><dt>Platform apa yang didukung?</dt><dd>Analisis tautan mendukung video YouTube (termasuk Shorts) serta postingan dan utas X (Twitter). Sistem mengambil sampel hingga 1.000 komentar publik.</dd></div>
+            <div><dt>Apakah hasilnya pasti benar?</dt><dd>Hasil bersifat indikatif berbasis algoritma heuristik dan AI untuk membantu membaca pola warganet, bukan sebagai vonis hukum terhadap akun tertentu.</dd></div>
             <div><dt>Perlu masuk akun?</dt><dd>Tidak perlu masuk akun untuk menggunakan kolom analisis. Cukup masukkan tautan video publik, tanpa menyertakan informasi pribadi.</dd></div>
             <div><dt>Bisa mengunduh hasil?</dt><dd>Gambar word cloud dapat diunduh sebagai PNG dari laporan. Grafik frekuensi membantu membaca angka di balik kata yang ditampilkan.</dd></div>
           </dl>
