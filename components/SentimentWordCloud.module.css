@@ -224,31 +224,29 @@
   font-family: inherit;
 }
 @keyframes wordPopIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.2) translateY(12px);
-  }
-  65% {
-    opacity: 1;
-    transform: scale(1.1) translateY(-2px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(12px) scale(0.84); }
+  75% { opacity: 1; transform: translateY(-1px) scale(1.025); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .wordItem {
-  opacity: 0;
-  animation: wordPopIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 1;
   transform-box: fill-box;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transform-origin: center;
+  transition: scale 180ms ease;
+}
+
+.viewport[data-entrance='waiting'] .wordItem {
+  opacity: 0;
+}
+
+.viewport[data-entrance='running'] .wordItem {
+  animation: wordPopIn var(--sn-motion-word) var(--sn-motion-ease) both;
 }
 
 .wordItem:hover {
-  transform: scale(1.15);
+  scale: 1.05;
   cursor: default;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
 }
 
 
@@ -514,5 +512,11 @@
   .downloadButton,
   .resetButton {
     transition: none;
+  }
+  .viewport[data-entrance] .wordItem {
+    opacity: 1;
+    transform: none;
+    scale: none;
+    animation: none;
   }
 }

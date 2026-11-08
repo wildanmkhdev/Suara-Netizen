@@ -15,6 +15,12 @@ export const ClassifiedCommentSchema = z.object({
   isBuzzer: z.boolean().optional(),
   buzzerReason: z.string().optional(),
   keywords: z.array(z.string()),
+  id: z.string().optional(),
+  author: z.string().optional(),
+  likeCount: z.number().int().nonnegative().optional(),
+  publishedAt: z.string().optional(),
+  url: z.string().url().optional(),
+  sentiment: z.enum(['positif', 'netral', 'negatif']).optional(),
 });
 
 export const BuzzerStatsSchema = z.object({
@@ -71,6 +77,7 @@ export type BuzzerStats = z.infer<typeof BuzzerStatsSchema>;
 export type ExecutiveSummaryStructured = z.infer<typeof ExecutiveSummaryStructuredSchema>;
 export type AnalysisResult = z.infer<typeof AnalysisResultSchema>;
 export type ExampleKind = 'promotion' | 'discussion' | 'x-thread';
+export type CommentFilter = 'all' | 'judol' | 'buzzer' | 'organic' | 'positif' | 'netral' | 'negatif' | 'contact' | 'linked' | 'unlinked';
 
 export function parseAnalysisResponse(value: unknown): { data: AnalysisResult; cached: boolean } {
   const result = AnalysisResponseSchema.safeParse(value);

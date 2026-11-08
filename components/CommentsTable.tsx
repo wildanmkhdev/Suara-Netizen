@@ -1,135 +1,312 @@
 'use client';
 
-import { useState } from 'react';
-import type { ClassifiedComment } from '@/lib/analysis-types';
-import styles from './Report.module.css';
+import { useId, useMemo, useState } from 'react';
+import type { ClassifiedComment, CommentFilter } from '@/lib/analysis-types';
+import { getCommentLinkFilter, type CommentLinkFilter } from '@/lib/comment-links';
+import styles from './CommentsTable.module.css';
 
-interface CommentsTableProps {
+export interface CommentsTableProps {
   comments: ClassifiedComment[];
+  filter?: CommentFilter;
+  onFilterChange?: (filter: CommentFilter) => void;
+  totalScanned?: number;
 }
 
-type CommentFilter = 'all' | 'judol' | 'buzzer' | 'organic';
+type CommentSort = 'source' | 'likes' | 'newest';
 
+interface CommentEntry {
+  comment: ClassifiedComment;
+  sourceIndex: number;
+  linkFilter: CommentLinkFilter;
+  publishedTimestamp?: number;
+  sourceHref?: string;
+}
+
+interface ExpandedView {
+  comments: ClassifiedComment[];
+  filter: CommentFilter;
+  query: string;
+  sort: CommentSort;
+}
+
+const EMPTY_COMMENTS: ClassifiedComment[] = [];
+const INITIAL_COUNT = 5;
 const countFormatter = new Intl.NumberFormat('id-ID');
+const dateFormatter = new Intl.DateTimeFormat('id-ID', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
 
-export function CommentsTable({ comments }: CommentsTableProps) {
-  const [filter, setFilter] = useState<CommentFilter>('all');
-  const availableComments = comments ?? [];
+const FILTER_LABELS: Record<CommentFilter, string> = {
+  all: 'Semua komentar',
+  judol: 'Promosi judol',
+  buzzer: 'Indikasi teks mirip',
+  organic: 'Tanpa penanda',
+  positif: 'Positif',
+  netral: 'Netral',
+  negatif: 'Negatif',
+  contact: 'WhatsApp / Telegram',
+  linked: 'Tautan lain',
+  unlinked: 'Tanpa tautan terdeteksi',
+};
 
-  const judolCount = availableComments.reduce((sum, c) => sum + (c.isJudol ? 1 : 0), 0);
-  const buzzerCount = availableComments.reduce((sum, c) => sum + (c.isBuzzer ? 1 : 0), 0);
-  const organicCount = availableComments.reduce((sum, c) => sum + (!c.isJudol && !c.isBuzzer ? 1 : 0), 0);
+const FILTER_ORDER: readonly CommentFilter[] = [
+  'all', 'judol', 'buzzer', 'organic', 'positif', 'netral', 'negatif', 'contact', 'linked', 'unlinked',
+];
 
-  const filters: { value: CommentFilter; label: string; count: number }[] = [
-    { value: 'all', label: 'Semua', count: availableComments.length },
-    { value: 'judol', label: 'Spam judol', count: judolCount },
-    { value: 'buzzer', label: 'Indikasi buzzer', count: buzzerCount },
-    { value: 'organic', label: 'Organik', count: organicCount },
-  ];
+function safeSourceHref(value?: string): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if ((url.protocol !== 'https:' && url.protocol !== 'http:') || url.username || url.password) return undefined;
+    return url.href;
+  } catch {
+    return undefined;
+  }
+}
 
-  const visibleCount =
-    filter === 'all'
-      ? availableComments.length
-      : filter === 'judol'
-        ? judolCount
-        : filter === 'buzzer'
-          ? buzzerCount
-          : organicCount;
+function matchesFilter(entry: CommentEntry, filter: CommentFilter): boolean {
+  const { comment } = entry;
+  if (filter === 'all') return true;
+  if (filter === 'judol') return comment.isJudol;
+  if (filter === 'buzzer') return Boolean(comment.isBuzzer) && !comment.isJudol;
+  if (filter === 'organic') return !comment.isJudol && !comment.isBuzzer;
+  if (filter === 'contact' || filter === 'linked' || filter === 'unlinked') return entry.linkFilter === filter;
+  return comment.sentiment === filter;
+}
 
-  const emptyMessage =
-    availableComments.length === 0
-      ? 'Belum ada komentar untuk ditampilkan.'
-      : filter === 'judol'
-        ? 'Tidak ada komentar dengan indikasi promosi judol dalam sampel ini.'
-        : filter === 'buzzer'
-          ? 'Tidak ada komentar dengan indikasi template buzzer dalam sampel ini.'
-          : 'Tidak ada komentar organik lainnya dalam sampel ini.';
+function compareLikes(a: CommentEntry, b: CommentEntry): number {
+  const first = a.comment.likeCount;
+  const second = b.comment.likeCount;
+  if (first === undefined) return second === undefined ? a.sourceIndex - b.sourceIndex : 1;
+  if (second === undefined) return -1;
+  return second - first || a.sourceIndex - b.sourceIndex;
+}
+
+function compareDates(a: CommentEntry, b: CommentEntry): number {
+  const first = a.publishedTimestamp;
+  const second = b.publishedTimestamp;
+  if (first === undefined) return second === undefined ? a.sourceIndex - b.sourceIndex : 1;
+  if (second === undefined) return -1;
+  return second - first || a.sourceIndex - b.sourceIndex;
+}
+
+export function CommentsTable({ comments, filter, onFilterChange, totalScanned }: CommentsTableProps) {
+  const id = useId();
+  const availableComments = comments ?? EMPTY_COMMENTS;
+  const [localFilter, setLocalFilter] = useState<CommentFilter>('all');
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<CommentSort>('source');
+  const [expandedView, setExpandedView] = useState<ExpandedView | null>(null);
+  const activeFilter = filter ?? localFilter;
+  const normalizedQuery = query.trim().toLocaleLowerCase('id-ID');
+  const listId = `${id}-comments`;
+
+  const summary = useMemo(() => {
+    const counts: Record<CommentFilter, number> = {
+      all: availableComments.length,
+      judol: 0,
+      buzzer: 0,
+      organic: 0,
+      positif: 0,
+      netral: 0,
+      negatif: 0,
+      contact: 0,
+      linked: 0,
+      unlinked: 0,
+    };
+    const entries: CommentEntry[] = availableComments.map((comment, sourceIndex) => {
+      if (comment.isJudol) counts.judol++;
+      else if (comment.isBuzzer) counts.buzzer++;
+      else counts.organic++;
+      if (comment.sentiment) counts[comment.sentiment]++;
+      const linkFilter = getCommentLinkFilter(comment.text);
+      counts[linkFilter]++;
+      const timestamp = comment.publishedAt ? Date.parse(comment.publishedAt) : NaN;
+      return {
+        comment,
+        sourceIndex,
+        linkFilter,
+        publishedTimestamp: Number.isFinite(timestamp) ? timestamp : undefined,
+        sourceHref: safeSourceHref(comment.url),
+      };
+    });
+    return {
+      counts,
+      entries,
+      hasLikes: entries.some((entry) => entry.comment.likeCount !== undefined),
+      hasDates: entries.some((entry) => entry.publishedTimestamp !== undefined),
+      hasSentiments: counts.positif + counts.netral + counts.negatif > 0,
+    };
+  }, [availableComments]);
+
+  const effectiveSort: CommentSort = (sort === 'likes' && !summary.hasLikes) || (sort === 'newest' && !summary.hasDates)
+    ? 'source'
+    : sort;
+  const matchingEntries = useMemo(() => {
+    const entries = summary.entries.filter((entry) => {
+      if (!matchesFilter(entry, activeFilter)) return false;
+      if (!normalizedQuery) return true;
+      return entry.comment.text.toLocaleLowerCase('id-ID').includes(normalizedQuery)
+        || Boolean(entry.comment.author?.toLocaleLowerCase('id-ID').includes(normalizedQuery));
+    });
+    if (effectiveSort === 'likes') entries.sort(compareLikes);
+    else if (effectiveSort === 'newest') entries.sort(compareDates);
+    return entries;
+  }, [summary.entries, activeFilter, normalizedQuery, effectiveSort]);
+
+  const expanded = expandedView?.comments === availableComments
+    && expandedView.filter === activeFilter
+    && expandedView.query === normalizedQuery
+    && expandedView.sort === effectiveSort;
+  const shownEntries = expanded ? matchingEntries : matchingEntries.slice(0, INITIAL_COUNT);
+
+  function changeFilter(nextFilter: CommentFilter) {
+    if (filter === undefined) setLocalFilter(nextFilter);
+    onFilterChange?.(nextFilter);
+    setExpandedView(null);
+  }
+
+  function resetView() {
+    setQuery('');
+    changeFilter('all');
+  }
+
+  function toggleExpanded() {
+    setExpandedView(expanded ? null : {
+      comments: availableComments,
+      filter: activeFilter,
+      query: normalizedQuery,
+      sort: effectiveSort,
+    });
+  }
+
+  const isSentimentFilter = activeFilter === 'positif' || activeFilter === 'netral' || activeFilter === 'negatif';
+  const emptyMessage = availableComments.length === 0
+    ? 'Laporan ini belum menyertakan teks komentar.'
+    : normalizedQuery
+      ? `Tidak ada komentar yang cocok dengan “${query.trim()}” pada filter ini.`
+      : isSentimentFilter && !summary.hasSentiments
+        ? 'Cuplikan belum memiliki label sentimen per komentar. Persentase pemindaian tidak digunakan untuk menebak label.'
+        : `Tidak ada komentar untuk filter “${FILTER_LABELS[activeFilter]}” dalam cuplikan ini.`;
 
   return (
     <section
-      style={{
-        boxSizing: 'border-box',
-        width: '100%',
-        marginTop: '28px',
-        padding: 'clamp(1.25rem, 2.5vw, 2rem)',
-        background: 'var(--sn-paper)',
-        border: '1px solid var(--sn-line)',
-        borderRadius: '12px',
-        boxShadow: '0 2px 8px -2px rgba(0, 0, 0, 0.05)',
-      }}
-      aria-label="Sampel komentar"
+      id="komentar-teratas"
+      className={styles.panel}
+      aria-labelledby={`${id}-title`}
+      tabIndex={-1}
       data-ui
     >
-      <h3 className={styles.title}>Sampel komentar terperiksa</h3>
-      <div className={styles.filters} role="group" aria-label="Filter komentar">
-        {filters.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => setFilter(option.value)}
-            className={styles.filterButton}
-            aria-pressed={filter === option.value}
-          >
-            <span className={styles.filterLabel}>{option.label}</span>
-            <span className={styles.filterCount}>({countFormatter.format(option.count)})</span>
-          </button>
-        ))}
-      </div>
-
-      <p className={styles.resultCount} role="status">
-        Menampilkan {countFormatter.format(visibleCount)} dari{' '}
-        {countFormatter.format(availableComments.length)} komentar sampel (dari total pemindaian hingga 1.000 komentar).
+      <h3 id={`${id}-title`} className={styles.title}>Komentar teratas</h3>
+      <p className={styles.intro}>
+        {countFormatter.format(availableComments.length)} komentar dalam cuplikan.
+        {totalScanned !== undefined && ` ${countFormatter.format(totalScanned)} komentar diperiksa.`}
+        {' '}Urutan awal mengikuti laporan.
       </p>
 
-      {visibleCount === 0 ? (
-        <p className={styles.emptyNote}>{emptyMessage}</p>
+      <div className={styles.controls}>
+        <label className={`${styles.field} ${styles.searchField}`} htmlFor={`${id}-search`}>
+          <span className={styles.fieldLabel}>Cari komentar</span>
+          <input
+            id={`${id}-search`}
+            className={styles.input}
+            type="search"
+            value={query}
+            placeholder="Isi atau nama penulis"
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setExpandedView(null);
+            }}
+          />
+        </label>
+        <label className={styles.field} htmlFor={`${id}-filter`}>
+          <span className={styles.fieldLabel}>Tampilkan</span>
+          <select
+            id={`${id}-filter`}
+            className={styles.select}
+            value={activeFilter}
+            onChange={(event) => changeFilter(event.target.value as CommentFilter)}
+          >
+            {FILTER_ORDER.map((value) => (
+              <option key={value} value={value}>{FILTER_LABELS[value]} ({countFormatter.format(summary.counts[value])})</option>
+            ))}
+          </select>
+        </label>
+        <label className={styles.field} htmlFor={`${id}-sort`}>
+          <span className={styles.fieldLabel}>Urutan</span>
+          <select
+            id={`${id}-sort`}
+            className={styles.select}
+            value={effectiveSort}
+            onChange={(event) => {
+              setSort(event.target.value as CommentSort);
+              setExpandedView(null);
+            }}
+          >
+            <option value="source">Dari laporan</option>
+            <option value="likes" disabled={!summary.hasLikes}>Suka terbanyak{!summary.hasLikes ? ' (tanpa data)' : ''}</option>
+            <option value="newest" disabled={!summary.hasDates}>Terbaru{!summary.hasDates ? ' (tanpa tanggal)' : ''}</option>
+          </select>
+        </label>
+      </div>
+
+      <p className={styles.resultCount} role="status" aria-atomic="true">
+        Menampilkan {countFormatter.format(shownEntries.length)} dari {countFormatter.format(matchingEntries.length)} komentar yang sesuai.
+      </p>
+
+      {matchingEntries.length === 0 ? (
+        <div>
+          <p className={styles.empty}>{emptyMessage}</p>
+          {availableComments.length > 0 && (activeFilter !== 'all' || normalizedQuery) && (
+            <button type="button" className={styles.resetButton} onClick={resetView}>Reset pencarian dan filter</button>
+          )}
+        </div>
       ) : (
-        <ol className={styles.commentList} role="list">
-          {availableComments.map((item, index) => {
-            if (filter === 'judol' && !item.isJudol) return null;
-            if (filter === 'buzzer' && !item.isBuzzer) return null;
-            if (filter === 'organic' && (item.isJudol || item.isBuzzer)) return null;
-
+        <ol id={listId} className={styles.commentList} role="list">
+          {shownEntries.map((entry) => {
+            const { comment } = entry;
+            const patternFilter = comment.isJudol ? 'judol' : comment.isBuzzer ? 'buzzer' : 'organic';
+            const hasAuthor = Boolean(comment.author?.trim());
+            const hasMetadata = comment.likeCount !== undefined || entry.publishedTimestamp !== undefined || entry.sourceHref !== undefined;
             return (
-              <li key={index} className={styles.commentRow}>
-                <div className={styles.commentMeta}>
-                  <span className={styles.commentNumber}>Komentar #{index + 1}</span>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {item.isJudol && (
-                      <span className={styles.promotionLabel}>Spam Judol</span>
-                    )}
-                    {item.isBuzzer && (
-                      <span className={styles.buzzerBadge}>Buzzer / Template</span>
-                    )}
-                    {!item.isJudol && !item.isBuzzer && (
-                      <span className={styles.otherLabel}>Organik</span>
-                    )}
-                  </div>
+              <li key={comment.id ? `${comment.id}-${entry.sourceIndex}` : entry.sourceIndex} className={styles.commentRow}>
+                <div className={styles.rowHeader}>
+                  {hasAuthor && <p className={styles.author} dir="auto">{comment.author}</p>}
+                  <span className={`${styles.patternLabel} ${styles[patternFilter] ?? ''}`}>{FILTER_LABELS[patternFilter]}</span>
+                  {comment.sentiment && <span className={styles.sentimentLabel}>Sentimen {FILTER_LABELS[comment.sentiment].toLocaleLowerCase('id-ID')}</span>}
                 </div>
-
-                <p className={styles.commentText} dir="auto">{item.text}</p>
-
-                {item.buzzerReason && (
-                  <p className={styles.commentKeywords} style={{ color: '#c25e00' }}>
-                    <span>Catatan: </span>
-                    <span>{item.buzzerReason}</span>
-                  </p>
+                <p className={styles.commentText} dir="auto">{comment.text}</p>
+                {hasMetadata && (
+                  <div className={styles.metadata}>
+                    {comment.likeCount !== undefined && <span>{countFormatter.format(comment.likeCount)} suka</span>}
+                    {entry.publishedTimestamp !== undefined && <time dateTime={new Date(entry.publishedTimestamp).toISOString()}>{dateFormatter.format(entry.publishedTimestamp)}</time>}
+                    {entry.sourceHref && <a className={styles.sourceLink} href={entry.sourceHref} target="_blank" rel="noopener noreferrer">Lihat komentar asli</a>}
+                  </div>
                 )}
-
-                {item.keywords && item.keywords.length > 0 && (
-                  <p className={styles.commentKeywords}>
-                    <span>Kata kunci judol: </span>
-                    <span className={styles.keywordValues}>{item.keywords.join(', ')}</span>
-                  </p>
-                )}
+                {comment.isJudol && comment.keywords.length > 0 && <p className={styles.keywords}>Kata kunci penanda: {comment.keywords.join(', ')}</p>}
               </li>
             );
           })}
         </ol>
       )}
 
-      <p className={styles.commentNote}>
-        Penandaan berlaku pada analisis teks komentar sampel, bukan identitas pemilik akun resmi.
+      {matchingEntries.length > INITIAL_COUNT && (
+        <button
+          type="button"
+          className={styles.expandButton}
+          aria-expanded={expanded}
+          aria-controls={listId}
+          onClick={toggleExpanded}
+        >
+          {expanded ? `Ringkas ke ${INITIAL_COUNT} komentar` : `Tampilkan semua (${countFormatter.format(matchingEntries.length)})`}
+        </button>
+      )}
+
+      <p className={styles.note}>
+        Penanda membaca pola teks, bukan memastikan identitas atau niat pengirim. Tautan dalam teks tidak diaktifkan; hanya tautan sumber komentar yang dapat dibuka.
       </p>
     </section>
   );

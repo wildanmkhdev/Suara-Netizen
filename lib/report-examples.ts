@@ -131,12 +131,13 @@ function buildExample(kind: ExampleKind, comments: ExampleComment[]): AnalysisRe
         'Waspadai klaim kemenangan dan jangan pernah mengklik tautan di bio profil akun tidak dikenal.',
       ],
     },
-    comments_sample: comments.map(({ text, isJudol, isBuzzer, buzzerReason, keywords }) => ({
+    comments_sample: comments.map(({ text, sentiment, isJudol, isBuzzer, buzzerReason, keywords }) => ({
       text,
       isJudol,
       isBuzzer: isBuzzer ?? false,
       buzzerReason,
       keywords,
+      sentiment,
     })),
   };
 }

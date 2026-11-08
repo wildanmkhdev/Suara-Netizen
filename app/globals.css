@@ -21,6 +21,9 @@
   --sn-lead: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);
   --sn-heading: clamp(1.875rem, 1.1rem + 2.7vw, 3.5rem);
   --sn-display: clamp(2.65rem, 1rem + 6.2vw, 6rem);
+  --sn-motion-scroll: 1400ms;
+  --sn-motion-word: 600ms;
+  --sn-motion-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --background: var(--sn-paper);
   --foreground: var(--sn-ink);
   --card: var(--sn-paper);
@@ -80,42 +83,36 @@ img, svg { max-width: 100%; }
 :focus-visible { outline: 2px solid var(--sn-ink); outline-offset: 4px; }
 * { scrollbar-width: thin; scrollbar-color: var(--sn-control) var(--sn-paper); }
 
-/* Smooth Scroll Reveal Animations */
-.revealPending {
+.scrollReveal {
+  min-width: 0;
+}
+
+.scrollReveal[data-entrance='waiting'] {
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: opacity, transform;
 }
 
-.revealed {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+.scrollReveal[data-entrance='running'] {
+  animation: sectionArrive var(--sn-motion-scroll) var(--sn-motion-ease)
+    var(--sn-reveal-delay, 0ms) both;
 }
 
-/* Word Cloud Pop-in Keyframes */
-@keyframes wordPopIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.2) translateY(12px);
-  }
-  65% {
-    opacity: 1;
-    transform: scale(1.1) translateY(-2px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+@keyframes sectionArrive {
+  from { opacity: 0; transform: translateY(36px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .scrollReveal[data-entrance] {
+    opacity: 1;
+    transform: none;
+    animation: none;
   }
 }

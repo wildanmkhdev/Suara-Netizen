@@ -24,7 +24,7 @@
 .featureCopy p { max-width: 43ch; margin-top: 1rem; font-size: var(--sn-body); line-height: 1.65; }
 .featureFigure { margin: 0; min-width: 0; }
 .featureFigure figcaption { margin-top: 0.75rem; font-size: var(--sn-small); line-height: 1.5; color: var(--sn-muted); }
-.sentimentPreview, .wordsPreview, .promotionPreview, .contextPreview { padding: 2rem; border-radius: 6px; background: var(--sn-surface); }
+.sentimentPreview, .promotionPreview, .contextPreview { padding: 2rem; border-radius: 6px; background: var(--sn-surface); }
 .sentimentPreview > span { font-size: var(--sn-small); font-weight: 500; }
 .sentimentBars { display: grid; gap: 1rem; margin-top: 1.5rem; }
 .sentimentRow { display: grid; grid-template-columns: 4.4rem minmax(0, 1fr) 3rem; gap: 1rem; align-items: center; }
@@ -35,34 +35,6 @@
 .positif { background: var(--sn-positive); }
 .netral { background: var(--sn-control); }
 .negatif { background: var(--sn-negative); }
-.wordsPreview { display: flex; align-items: center; justify-content: center; min-height: 15rem; }
-.wordPlot { display: block; width: 100%; overflow: visible; }
-.wordPlot text { fill: var(--sn-ink); font-family: var(--sn-font); }
-@keyframes wordPopIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.2) translateY(12px);
-  }
-  65% {
-    opacity: 1;
-    transform: scale(1.1) translateY(-2px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.animatedWord {
-  opacity: 0;
-  animation: wordPopIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transform-box: fill-box;
-  transition: transform 0.2s ease, fill 0.2s ease;
-}
-.animatedWord:hover {
-  transform: scale(1.18);
-  cursor: default;
-}
 .promotionPreview p, .contextPreview p { font-size: var(--sn-lead); line-height: 1.5; }
 .keywordTags { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.2rem; }
 .keywordTags span { padding: 0.2rem 0.5rem; color: var(--sn-promotion); background: var(--sn-promotion-soft); border-radius: 4px; font-size: var(--sn-small); }
@@ -120,7 +92,7 @@
   .featureRow:nth-child(2) .featureFigure { order: 0; }
   .featureCopy h3 { font-size: 1.5rem; }
   .featureCopy p { max-width: none; }
-  .sentimentPreview, .wordsPreview, .promotionPreview, .contextPreview { padding: 1.4rem; }
+  .sentimentPreview, .promotionPreview, .contextPreview { padding: 1.4rem; }
   .sentimentRow { grid-template-columns: 4rem minmax(0, 1fr) 2.6rem; gap: 0.6rem; }
   .literacy { grid-template-columns: 1fr; padding-block: 2rem 3rem; gap: 2rem; }
   .literacyPhoto { min-height: 0; height: 20rem; }

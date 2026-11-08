@@ -5,6 +5,7 @@ import type { WordFrequencyItem } from '@/lib/judol-keywords';
 import { Download } from 'lucide-react';
 import { layoutWordCloud, WORD_CLOUD_LIMIT } from '@/lib/word-cloud-layout';
 import type { WordCloudCategory, WordCloudLayout, WordCloudWord } from '@/lib/word-cloud-layout';
+import { useViewportEntrance } from '@/lib/use-viewport-entrance';
 import styles from './SentimentWordCloud.module.css';
 
 interface SentimentWordCloudProps {
@@ -152,6 +153,7 @@ interface WordCloudPlotProps {
 
 function WordCloudPlot({ words, label, compact = false, downloadable = false }: WordCloudPlotProps) {
   const { viewportRef, current, isPending } = useMeasuredWordCloud(words);
+  useViewportEntrance(viewportRef, words);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const titleId = useId();
@@ -300,8 +302,7 @@ function WordCloudPlot({ words, label, compact = false, downloadable = false }: 
                 fill={categoryColor(word.category)}
                 className={styles.wordItem}
                 style={{
-                  animationDelay: `${Math.min(idx * 35, 1200)}ms`,
-                  transformOrigin: `${word.x}px ${word.y}px`,
+                  animationDelay: `${idx * 300}ms`,
                 }}
               >
                 {word.text}

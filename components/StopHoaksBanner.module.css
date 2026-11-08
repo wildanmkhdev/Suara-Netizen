@@ -1,0 +1,55 @@
+.poster {
+  min-width: 0;
+  margin: 0;
+}
+
+.artwork {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  container-type: inline-size;
+  margin-inline: auto;
+}
+
+.artwork img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.lettering {
+  position: absolute;
+  top: 53%;
+  right: 24%;
+  left: 28%;
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  color: var(--sn-paper);
+  transform: rotate(-7deg);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.lettering span:first-child {
+  font-size: clamp(0.5rem, 6cqw, 2rem);
+}
+
+.lettering span:last-child {
+  font-size: clamp(0.8rem, 11cqw, 3.5rem);
+}
+
+.poster figcaption {
+  margin-top: 0.5rem;
+  color: var(--sn-muted);
+  font-size: var(--sn-small);
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .artwork {
+    max-width: 390px;
+  }
+
+}

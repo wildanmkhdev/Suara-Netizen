@@ -8,8 +8,9 @@ import { SentimentWordCloud } from '@/components/SentimentWordCloud';
 import { LiteracySummaryCard } from '@/components/LiteracySummaryCard';
 import { CommentsTable } from '@/components/CommentsTable';
 import { ScrollReveal } from '@/components/ScrollReveal';
+import { StopHoaksBanner } from '@/components/StopHoaksBanner';
 import { parseAnalysisResponse, responseError } from '@/lib/analysis-types';
-import type { AnalysisResult, ExampleKind } from '@/lib/analysis-types';
+import type { AnalysisResult, CommentFilter, ExampleKind } from '@/lib/analysis-types';
 import { REPORT_EXAMPLES } from '@/lib/report-examples';
 import styles from './AnalyzerWorkspace.module.css';
 
@@ -62,11 +63,10 @@ export function AnalyzerWorkspace() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<ReportView | null>(null);
-  const [example, setExample] = useState<ExampleKind>('discussion');
+  const [commentFilter, setCommentFilter] = useState<CommentFilter>('all');
   const requestRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const preview = REPORT_EXAMPLES[example];
 
   useEffect(() => () => requestRef.current?.abort(), []);
 
@@ -84,7 +84,7 @@ export function AnalyzerWorkspace() {
     requestRef.current = null;
     setPending(false);
     setError(null);
-    setExample(kind);
+    setCommentFilter('all');
     setView({ data: REPORT_EXAMPLES[kind], kind: 'example', cached: false });
   };
 
@@ -115,6 +115,7 @@ export function AnalyzerWorkspace() {
       if (!response.ok) throw new Error(responseError(body));
       const parsed = parseAnalysisResponse(body);
       if (controller.signal.aborted) return;
+      setCommentFilter('all');
       setView({
         data: parsed.data,
         kind: parsed.data.video_title?.startsWith('Demo Sampel:') ? 'example' : 'analysis',
@@ -138,7 +139,7 @@ export function AnalyzerWorkspace() {
         <div className={styles.heroCopy}>
           <h1 id="landing-title">Pahami suara<br />warganet.</h1>
           <p className={styles.intro}>
-            Baca sentimen publik, deteksi buzzer bayaran & astroturfing, serta ungkap indikasi promosi judi online dari komentar YouTube & X (Twitter).
+            Baca sentimen, kenali pola komentar, dan periksa promosi mencurigakan di YouTube & X (Twitter).
           </p>
           <div id="pindai" className={styles.formArea} data-ui>
             <form onSubmit={analyze} noValidate aria-busy={pending}>
@@ -191,80 +192,9 @@ export function AnalyzerWorkspace() {
           <noscript><p className={styles.help}>Aktifkan JavaScript untuk menjalankan analisis. Informasi fitur tetap dapat dibaca di halaman ini.</p></noscript>
         </div>
 
-        <figure className={styles.heroPreview}>
-          <div className={styles.previewSheet} data-ui>
-            <div className={styles.previewHeading}>
-              <span>{preview.video_title || 'Percakapan publik warganet'}</span>
-              <span>{preview.total_comments_scanned} komentar sampel</span>
-            </div>
-            <div className={styles.previewComments}>
-              {(preview.comments_sample ?? []).slice(0, 3).map((comment) => (
-                <div className={styles.previewComment} key={comment.text}>
-                  <span className={styles.commentMark} aria-hidden="true">“</span>
-                  <p>{comment.text}</p>
-                </div>
-              ))}
-            </div>
-            <div className={styles.previewSummary}>
-              <p>
-                {example === 'promotion'
-                  ? 'Kontaminasi promosi judol terdeteksi'
-                  : example === 'x-thread'
-                    ? 'Indikasi buzzer & astroturfing terkoordinasi'
-                    : 'Apresiasi, diskusi wajar, dan kritik warganet'}
-              </p>
-              {/* Mini Pie Chart & Bar Chart Preview */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '14px 0' }}>
-                <svg viewBox="0 0 100 100" style={{ width: '56px', height: '56px', transform: 'rotate(-90deg)', flexShrink: 0 }} aria-hidden="true">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="var(--sn-surface)" strokeWidth="18" />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="#237454"
-                    strokeWidth="18"
-                    strokeDasharray={`${(preview.sentiment_distribution.positif / 100) * 251.3} 251.3`}
-                    strokeDashoffset="0"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="#b9bdb8"
-                    strokeWidth="18"
-                    strokeDasharray={`${(preview.sentiment_distribution.netral / 100) * 251.3} 251.3`}
-                    strokeDashoffset={`${-((preview.sentiment_distribution.positif / 100) * 251.3)}`}
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="#af4338"
-                    strokeWidth="18"
-                    strokeDasharray={`${(preview.sentiment_distribution.negatif / 100) * 251.3} 251.3`}
-                    strokeDashoffset={`${-(((preview.sentiment_distribution.positif + preview.sentiment_distribution.netral) / 100) * 251.3)}`}
-                  />
-                </svg>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div className={styles.miniBar} aria-hidden="true" style={{ margin: 0, height: '10px' }}>
-                    <span className={styles.positiveBar} style={{ width: `${preview.sentiment_distribution.positif}%` }} />
-                    <span className={styles.neutralBar} style={{ width: `${preview.sentiment_distribution.netral}%` }} />
-                    <span className={styles.negativeBar} style={{ width: `${preview.sentiment_distribution.negatif}%` }} />
-                  </div>
-                  <div className={styles.miniLegend} style={{ marginTop: '2px' }}>
-                    <span>Positif {preview.sentiment_distribution.positif}%</span>
-                    <span>Netral {preview.sentiment_distribution.netral}%</span>
-                    <span>Negatif {preview.sentiment_distribution.negatif}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <figcaption>Ilustrasi laporan interaktif. Mendukung analisis multi-platform YouTube dan X (Twitter).</figcaption>
-        </figure>
+        <ScrollReveal className={styles.heroArtwork} delayMs={100}>
+          <StopHoaksBanner />
+        </ScrollReveal>
       </section>
 
       {view ? (
@@ -309,17 +239,28 @@ export function AnalyzerWorkspace() {
             </a>
           ) : null}
 
-          {/* Dashboard Intelijen Percakapan: 4 KPI + Pie Entitas + Bar Sentimen + Pita Niat */}
-          <ScrollReveal>
-            <AnalysisDashboard
-              distribution={view.data.sentiment_distribution}
-              buzzerStats={view.data.buzzer_stats}
-              judolScore={view.data.judol_risk_score}
-              totalCommentsScanned={view.data.total_comments_scanned}
-            />
-          </ScrollReveal>
+          <div className={styles.reportMain} key={view.data.video_id}>
+            <ScrollReveal>
+              <AnalysisDashboard
+                distribution={view.data.sentiment_distribution}
+                buzzerStats={view.data.buzzer_stats}
+                judolScore={view.data.judol_risk_score}
+                totalCommentsScanned={view.data.total_comments_scanned}
+                comments={view.data.comments_sample ?? []}
+                selectedFilter={commentFilter}
+                onSelectFilter={setCommentFilter}
+              />
+            </ScrollReveal>
+            <ScrollReveal delayMs={100}>
+              <CommentsTable
+                comments={view.data.comments_sample ?? []}
+                filter={commentFilter}
+                onFilterChange={setCommentFilter}
+                totalScanned={view.data.total_comments_scanned}
+              />
+            </ScrollReveal>
+          </div>
 
-          {/* Ringkasan Eksekutif, Analisis Opini, dan Solusi Tindakan */}
           <ScrollReveal delayMs={100}>
             <LiteracySummaryCard
               summary={view.data.executive_summary}
@@ -330,14 +271,8 @@ export function AnalyzerWorkspace() {
             />
           </ScrollReveal>
 
-          {/* Word Cloud Topik dengan Animasi Pop-in Kata */}
           <ScrollReveal delayMs={150}>
             <SentimentWordCloud words={view.data.word_frequencies} />
-          </ScrollReveal>
-
-          {/* Tabel Sampel Komentar Terklasifikasi */}
-          <ScrollReveal delayMs={200}>
-            <CommentsTable comments={view.data.comments_sample ?? []} />
           </ScrollReveal>
         </section>
       ) : null}

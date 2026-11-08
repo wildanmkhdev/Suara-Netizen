@@ -2,13 +2,12 @@ import Image from 'next/image';
 import { AnalyzerWorkspace } from '@/components/AnalyzerWorkspace';
 import { MobileNav } from '@/components/MobileNav';
 import { ScrollReveal } from '@/components/ScrollReveal';
+import { LandingWordCloud } from '@/components/LandingWordCloud';
 import { REPORT_EXAMPLES } from '@/lib/report-examples';
 import styles from './page.module.css';
 
 const sample = REPORT_EXAMPLES.discussion;
 const promotion = REPORT_EXAMPLES.promotion;
-const topWords = sample.word_frequencies.slice(0, 8);
-const wordPreviewPositions = [[150, 55], [360, 55], [480, 65], [135, 115], [365, 118], [500, 145], [180, 185], [440, 194]] as const;
 
 function Brand({ footer = false }: { footer?: boolean }) {
   return (
@@ -116,32 +115,7 @@ export default function Home() {
                 <p>Word cloud memperlihatkan kata yang paling sering muncul. Bandingkan kosakata dan lihat frekuensinya, lalu unduh gambarnya.</p>
               </div>
               <figure className={styles.featureFigure}>
-                <div className={styles.wordsPreview} data-ui>
-                  <svg viewBox="0 0 600 220" className={styles.wordPlot} role="img" aria-label="Contoh word cloud dari percakapan ilustratif">
-                    {topWords.map((word, index) => {
-                      const [x, y] = wordPreviewPositions[index];
-                      return (
-                        <text
-                          key={word.text}
-                          x={x}
-                          y={y}
-                          textAnchor="middle"
-                          fill={word.category === 'positif' ? '#16a34a' : word.category === 'negatif' ? '#dc2626' : '#0f172a'}
-                          aria-label={`${word.text}: ${word.value} kali`}
-                          fontSize={Math.min(42, 26 + word.value * 3)}
-                          fontWeight={700}
-                          className={styles.animatedWord}
-                          style={{
-                            animationDelay: `${index * 80}ms`,
-                            transformOrigin: `${x}px ${y}px`,
-                          }}
-                        >
-                          {word.text}
-                        </text>
-                      );
-                    })}
-                  </svg>
-                </div>
+                <LandingWordCloud words={sample.word_frequencies} />
                 <figcaption>Ukuran kata mengikuti frekuensi dalam contoh percakapan.</figcaption>
               </figure>
             </article>

@@ -1,0 +1,60 @@
+.root {
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--sn-surface);
+  border-radius: 6px;
+}
+
+.cloud svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--sn-font);
+}
+
+.word {
+  opacity: 1;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.cloud[data-entrance='waiting'] .word {
+  opacity: 0;
+}
+
+.cloud[data-entrance='running'] .word {
+  animation: wordArrive var(--sn-motion-word) var(--sn-motion-ease)
+    var(--word-delay) both;
+}
+
+@keyframes wordArrive {
+  0% { opacity: 0; transform: translateY(12px) scale(0.84); }
+  75% { opacity: 1; transform: translateY(-1px) scale(1.025); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.replay {
+  display: block;
+  min-height: 44px;
+  margin: 0 0 0 auto;
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--sn-muted);
+  font-size: var(--sn-small);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.replay:hover {
+  color: var(--sn-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud[data-entrance] .word {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
